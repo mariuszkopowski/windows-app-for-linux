@@ -3,6 +3,8 @@
 **Unofficial Client for Windows App** - A standalone Electron application that provides native Linux access to Azure Virtual Desktops via Windows App web access (https://windows.cloud.microsoft) with proper browser emulation, device permissions, and remote desktop support.
 
 ## Overview
+[![windows-app-for-linux](https://snapcraft.io/windows-app-for-linux/badge.svg)](https://snapcraft.io/windows-app-for-linux)
+[![windows-app-for-linux](https://snapcraft.io/windows-app-for-linux/trending.svg?name=0)](https://snapcraft.io/windows-app-for-linux)
 
 This **unofficial client** wraps the Windows Cloud Devices web interface in an Electron shell, configured to behave like Microsoft Edge browser. It enables full access to Azure Virtual Desktop sessions through Windows App web access, with proper handling of camera, microphone, and other device permissions required for remote desktop connections.
 
@@ -19,16 +21,23 @@ This **unofficial client** wraps the Windows Cloud Devices web interface in an E
 - ✅ **Error Recovery**: Automatic crash recovery and error handling
 - ✅ **Linux Packaging**: Snap and Flatpak support for easy distribution
 
-## Prerequisites
+## Quick Start
+
+### Installation
+
+<a href="https://snapcraft.io/windows-app-for-linux">
+    <img alt="Get it from the Snap Store" src=https://snapcraft.io/en/dark/install.svg />
+  </a>
+
+### Run from source code
+#### Prerequisites
 
 - **Node.js**: v16 or higher (v20+ recommended)
 - **npm**: Comes with Node.js
 - **For Snap builds**: `snapcraft` (install via `sudo snap install snapcraft --classic`)
 - **For Flatpak builds**: `flatpak` and `flatpak-builder`
 
-## Quick Start
-
-### Installation
+#### Enviroment setup
 
 1. **Clone or download this repository**
 
@@ -38,12 +47,12 @@ This **unofficial client** wraps the Windows Cloud Devices web interface in an E
    ```
 
    Or manually install dependencies:
-```bash
-   cd src
-npm install
-```
+   ```bash
+      cd src
+   npm install
+   ```
 
-### Running the Application
+#### Running the Application
 
 Start the application:
 ```bash
@@ -59,7 +68,7 @@ For detailed documentation, see the [docs](docs/) folder:
 - **[Compare Flags](docs/compare-flags.md)** - Comparison of Electron command-line flags
 
 The app will:
-- Launch in windowed mode (1920x1080)
+- Launch in windowed mode
 - Load the Windows Cloud Devices page (Azure Virtual Desktops via Windows App web access)
 - Use the configured Edge User-Agent
 - Automatically grant permissions for camera and microphone when needed
