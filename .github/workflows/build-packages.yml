@@ -1,0 +1,243 @@
+name: Build Snap and Flatpak Packages
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-snap:
+    name: Build Snap Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install snapcraft
+        uses: snapcore/action-setup@v1
+        with:
+          snapcraft-channel: 'latest/stable'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd src
+          npm ci
+
+      - name: Build Snap package
+        run: |
+          # Create build directory structure
+          mkdir -p build/snap
+          
+          # Copy src contents to build/snap
+          cp -r src/* build/snap/
+          cp package.json build/snap/
+          cp package-lock.json build/snap/ 2>/dev/null || true
+          cp snapcraft.yaml build/snap/
+          
+          cd build/snap
+          
+          # Update snapcraft.yaml paths
+          sed -i 's|source: \$CRAFT_PROJECT_DIR/src|source: .|' snapcraft.yaml || true
+          sed -i 's|icon: src/windows-app-for-linux.desktop.png|icon: windows-app-for-linux.desktop.png|' snapcraft.yaml || true
+          
+          # Build the snap
+          snapcraft pack --destructive-mode
+          
+          # Move snap file to build directory
+          if [ -f *.snap ]; then
+            cd ../
+            mv snap/*.snap .
+          fi
+
+      - name: Upload Snap artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snap-package
+          path: build/*.snap
+          retention-days: 30
+
+  build-flatpak:
+    name: Build Flatpak Package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
+      - name: Add Flathub remote
+        run: |
+          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd src
+          npm ci
+
+      - name: Build Flatpak package
+        run: |
+          mkdir -p build/flatpak-build
+          flatpak-builder \
+            --user \
+            --force-clean \
+            --repo=build/flatpak-repo \
+            build/flatpak-build \
+            src/windows-app-for-linux.desktop.yml
+
+      - name: Create Flatpak bundle
+        run: |
+          flatpak build-bundle \
+            build/flatpak-repo \
+            build/windows-app-for-linux.flatpak \
+            com.microsoft.WindowsAppForLinux \
+            --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+
+      - name: Upload Flatpak artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: flatpak-package
+          path: build/*.flatpak
+          retention-days: 30
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-snap, build-flatpak]
+    if: startsWith(github.ref, 'refs/tags/v') && needs.build-snap.result == 'success' && needs.build-flatpak.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main branch
+        id: verify_branch
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          # Fetch main branch to ensure we have the latest
+          git fetch origin main:main 2>/dev/null || git fetch origin main || true
+          # Get the commit the tag points to
+          TAG_COMMIT=$(git rev-list -n 1 $TAG_NAME)
+          # Check if this commit is reachable from main branch
+          if git branch -r --contains $TAG_COMMIT | grep -q "origin/main"; then
+            echo "Tag $TAG_NAME is on main branch"
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "Tag $TAG_NAME is NOT on main branch - skipping release"
+            echo "is_main=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Get version from tag
+        id: tag_version
+        if: steps.verify_branch.outputs.is_main == 'true'
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Download Snap artifact
+        if: steps.verify_branch.outputs.is_main == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: snap-package
+          path: release-artifacts/
+
+      - name: Download Flatpak artifact
+        if: steps.verify_branch.outputs.is_main == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-package
+          path: release-artifacts/
+
+      - name: Create Release
+        if: steps.verify_branch.outputs.is_main == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release v${{ steps.tag_version.outputs.version }}
+          body: |
+            ## Windows App for Linux v${{ steps.tag_version.outputs.version }}
+            
+            ### Installation
+            
+            **Snap Package:**
+            ```bash
+            sudo snap install windows-app-for-linux_${{ steps.tag_version.outputs.version }}_amd64.snap --dangerous
+            ```
+            
+            **Flatpak Package:**
+            ```bash
+            flatpak install windows-app-for-linux.flatpak
+            ```
+            
+            ### Changes
+            See the [full changelog](https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.ref }}) for details.
+          files: |
+            release-artifacts/*.snap
+            release-artifacts/*.flatpak
+          draft: false
+          prerelease: false
+
+  build-summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [build-snap, build-flatpak]
+    if: always()
+    steps:
+      - name: Download Snap artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: snap-package
+          path: artifacts/snap
+
+      - name: Download Flatpak artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flatpak-package
+          path: artifacts/flatpak
+
+      - name: Display build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Snap Package" >> $GITHUB_STEP_SUMMARY
+          if [ -f artifacts/snap/*.snap ]; then
+            ls -lh artifacts/snap/*.snap >> $GITHUB_STEP_SUMMARY
+            echo "✅ Snap package built successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Snap package build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Flatpak Package" >> $GITHUB_STEP_SUMMARY
+          if [ -f artifacts/flatpak/*.flatpak ]; then
+            ls -lh artifacts/flatpak/*.flatpak >> $GITHUB_STEP_SUMMARY
+            echo "✅ Flatpak package built successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Flatpak package build failed" >> $GITHUB_STEP_SUMMARY
+          fi
+
