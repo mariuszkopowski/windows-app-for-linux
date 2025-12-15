@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Windows App for Linux
-Comment=Access Windows Cloud Devices from Linux
+Comment=Unofficial client for Windows App - Access Azure Virtual Desktops on Linux
 Exec=windows-app-for-linux
 Icon=windows-app-for-linux.desktop.png
 Type=Application
