@@ -1,6 +1,6 @@
 # Windows App for Linux
 
-**Unofficial Client for Windows App** - A standalone Electron application that provides native Linux access to Azure Virtual Desktops via Windows App web access (https://windows.cloud.microsoft/#/devices) with proper browser emulation, device permissions, and remote desktop support.
+**Unofficial Client for Windows App** - A standalone Electron application that provides native Linux access to Azure Virtual Desktops via Windows App web access (https://windows.cloud.microsoft) with proper browser emulation, device permissions, and remote desktop support.
 
 ## Overview
 
