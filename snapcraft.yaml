@@ -4,12 +4,12 @@ license: MIT
 version: '1.0.0'
 summary: Windows App for Linux
 description: |
-  A standalone Electron application for Windows Cloud Devices web interface
+  A unofficial standalone Electron application for Windows Cloud Devices web interface
   with proper User-Agent configuration and full device access.
-contact: https://github.com/yourusername/windows-app-for-linux
-website: https://github.com/yourusername/windows-app-for-linux
-source-code: https://github.com/yourusername/windows-app-for-linux
-issues: https://github.com/yourusername/windows-app-for-linux/issues
+contact: https://github.com/mariuszkopowski/windows-app-for-linux
+website: https://github.com/mariuszkopowski/windows-app-for-linux
+source-code: https://github.com/mariuszkopowski/windows-app-for-linux
+issues: https://github.com/mariuszkopowski/windows-app-for-linux/issues
 icon: src/windows-app-for-linux.desktop.png
 
 grade: stable
