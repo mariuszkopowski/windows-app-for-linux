@@ -1,0 +1,29 @@
+{
+  "name": "windows-app-for-linux",
+  "productName": "Windows App for Linux",
+  "version": "1.0.0",
+  "description": "Unofficial Windows App for Linux - Access Windows Cloud Devices",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron src/main.js",
+    "build": "electron-builder",
+    "build:snap": "./scripts/build-snap.sh",
+    "build:flatpak": "flatpak-builder build/flatpak-build src/windows-app-for-linux.desktop.yml --force-clean",
+    "install:flatpak": "flatpak-builder --user --install --force-clean build/flatpak-build src/windows-app-for-linux.desktop.yml",
+    "clean": "rm -rf build/ .snapcraft/ *.snap",
+    "clean:snap": "rm -rf build/snap/",
+    "clean:flatpak": "rm -rf build/flatpak-build/"
+  },
+  "keywords": [
+    "electron",
+    "windows-cloud",
+    "remote-desktop"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}
+

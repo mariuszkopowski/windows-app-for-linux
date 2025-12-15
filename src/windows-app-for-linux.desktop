@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Windows App for Linux
+Comment=Access Windows Cloud Devices from Linux
+Exec=windows-app-for-linux
+Icon=windows-app-for-linux.desktop.png
+Type=Application
+Categories=Network;WebBrowser;RemoteAccess;
+StartupNotify=true
+MimeType=x-scheme-handler/windows-cloud;
+
