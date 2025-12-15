@@ -206,7 +206,7 @@ function showAboutDialog() {
   <h1>Windows App for Linux</h1>
   <div class="version">Version 1.0.0</div>
   <div class="description">
-    A standalone Electron application for Windows Cloud Devices web interface.
+    Unofficial client for Windows App - Access Azure Virtual Desktops on Linux via Windows App web access.
   </div>
   <button onclick="window.close()">Close</button>
 </body>
@@ -218,6 +218,30 @@ function showAboutDialog() {
 
 // Settings dialog
 function showSettingsDialog() {
+  // Create preload script for settings window
+  const preloadScript = `
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  send: (channel, data) => {
+    // Whitelist channels for security
+    const validChannels = ['save-settings', 'clear-cache'];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.send(channel, data);
+    }
+  }
+});
+`;
+  
+  // Write preload script to temporary file
+  const userDataPath = app.getPath('userData');
+  // Ensure userData directory exists
+  if (!fs.existsSync(userDataPath)) {
+    fs.mkdirSync(userDataPath, { recursive: true });
+  }
+  const preloadPath = path.join(userDataPath, 'settings-preload.js');
+  fs.writeFileSync(preloadPath, preloadScript, 'utf8');
+  
   const settingsWindow = new BrowserWindow({
     width: 700,
     height: 650,
@@ -226,7 +250,8 @@ function showSettingsDialog() {
     resizable: false,
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      preload: preloadPath
     }
   });
 
@@ -359,7 +384,8 @@ function showSettingsDialog() {
   </div>
   
   <script>
-    const { ipcRenderer } = require('electron');
+    // Use the exposed electronAPI from preload script instead of require('electron')
+    // electronAPI is exposed via contextBridge in the preload script
     
     function saveSettings() {
       const connectionUrl = document.getElementById('connectionUrl').value;
@@ -380,7 +406,8 @@ function showSettingsDialog() {
         settings.windowHeight = windowHeight;
       }
       if (Object.keys(settings).length > 0) {
-        ipcRenderer.send('save-settings', settings);
+        // Use the exposed API from preload script
+        window.electronAPI.send('save-settings', settings);
       }
       window.close();
     }
@@ -391,7 +418,8 @@ function showSettingsDialog() {
     
     async function clearCache() {
       if (confirm('Are you sure you want to clear all cookies and cache? You will need to log in again.')) {
-        ipcRenderer.send('clear-cache');
+        // Use the exposed API from preload script
+        window.electronAPI.send('clear-cache');
         alert('Cookies and cache cleared. The application will reload.');
         window.close();
       }

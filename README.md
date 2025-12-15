@@ -1,10 +1,10 @@
 # Windows App for Linux
 
-A standalone Electron application that provides native Linux access to Windows Cloud Devices (https://windows.cloud.microsoft/#/devices) with proper browser emulation, device permissions, and remote desktop support.
+**Unofficial Client for Windows App** - A standalone Electron application that provides native Linux access to Azure Virtual Desktops via Windows App web access (https://windows.cloud.microsoft/#/devices) with proper browser emulation, device permissions, and remote desktop support.
 
 ## Overview
 
-This application wraps the Windows Cloud Devices web interface in an Electron shell, configured to behave like Microsoft Edge browser. It enables full access to Windows Cloud Devices features including remote desktop sessions, with proper handling of camera, microphone, and other device permissions required for the service.
+This **unofficial client** wraps the Windows Cloud Devices web interface in an Electron shell, configured to behave like Microsoft Edge browser. It enables full access to Azure Virtual Desktop sessions through Windows App web access, with proper handling of camera, microphone, and other device permissions required for remote desktop connections.
 
 ## Features
 
@@ -60,10 +60,10 @@ For detailed documentation, see the [docs](docs/) folder:
 
 The app will:
 - Launch in windowed mode (1920x1080)
-- Load the Windows Cloud Devices page
+- Load the Windows Cloud Devices page (Azure Virtual Desktops via Windows App web access)
 - Use the configured Edge User-Agent
 - Automatically grant permissions for camera and microphone when needed
-- Handle new windows for remote desktop sessions
+- Handle new windows for Azure Virtual Desktop sessions
 
 ## Keyboard Shortcuts
 
@@ -179,11 +179,11 @@ The application can also be packaged as a Flatpak.
 
 ### Main Window
 
-The main window loads the Windows Cloud Devices dashboard at `https://windows.cloud.microsoft/#/devices`. It uses a custom User-Agent and browser-like headers to ensure compatibility with Microsoft's service.
+The main window loads the Windows Cloud Devices dashboard at `https://windows.cloud.microsoft/#/devices`, which provides access to Azure Virtual Desktops via Windows App web access. It uses a custom User-Agent and browser-like headers to ensure compatibility with Microsoft's service.
 
 ### Remote Desktop Windows
 
-When you connect to a remote desktop, the application automatically creates a new window with:
+When you connect to an Azure Virtual Desktop session, the application automatically creates a new window with:
 - Shared session and cookies (for authentication)
 - Same User-Agent configuration
 - Proper WebRTC and WebAssembly support
@@ -241,7 +241,7 @@ The app automatically grants the following permissions:
 
 ### Web Page Doesn't Load
 
-1. **Check internet connection**: Ensure you have access to `windows.cloud.microsoft`
+1. **Check internet connection**: Ensure you have access to `windows.cloud.microsoft` (Windows App web access for Azure Virtual Desktops)
 2. **Verify User-Agent**: Check that the User-Agent is correctly set (use F12 DevTools)
 3. **Check console errors**: Enable DevTools (F12) and check for JavaScript errors
 4. **Clear cache**: The app uses Electron's default session storage
@@ -326,8 +326,9 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## Notes
 
-- The application requires an active internet connection to access Windows Cloud Devices
-- A Microsoft account is required to use Windows Cloud Devices
-- Remote desktop sessions open in separate windows for better isolation
+- **This is an unofficial client** for Windows App and is not affiliated with or endorsed by Microsoft
+- The application requires an active internet connection to access Azure Virtual Desktops via Windows App web access
+- A Microsoft account is required to use Azure Virtual Desktops
+- Remote desktop sessions (Azure Virtual Desktops) open in separate windows for better isolation
 - The app is designed to work on Linux distributions with X11 or Wayland
 

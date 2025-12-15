@@ -2,10 +2,13 @@ name: windows-app-for-linux
 title: Windows App for Linux
 license: MIT
 version: '1.0.0'
-summary: Windows App for Linux
+summary: Unofficial client for Windows App - Access Azure Virtual Desktops on Linux
 description: |
-  A unofficial standalone Electron application for Windows Cloud Devices web interface
-  with proper User-Agent configuration and full device access.
+  An unofficial standalone Electron application that provides native Linux access to 
+  Azure Virtual Desktops via Windows App web access. This unofficial client wraps the 
+  Windows Cloud Devices web interface in an Electron shell, configured to behave like 
+  Microsoft Edge browser. It enables full access to Azure Virtual Desktop sessions with 
+  proper browser emulation, device permissions, and remote desktop support.
 contact: https://github.com/mariuszkopowski/windows-app-for-linux
 website: https://github.com/mariuszkopowski/windows-app-for-linux
 source-code: https://github.com/mariuszkopowski/windows-app-for-linux
@@ -43,6 +46,11 @@ apps:
       - pulseaudio
       - home
       - removable-media
+  update-icon-cache:
+    command: bin/update-icon-cache
+    plugs:
+      - desktop
+      - home
 
 parts:
   electron-app:
@@ -177,6 +185,9 @@ parts:
         # Copy to system pixmaps location
         mkdir -p "$CRAFT_PART_INSTALL/usr/share/pixmaps"
         cp "$ICON_SOURCE" "$CRAFT_PART_INSTALL/usr/share/pixmaps/windows-app-for-linux.png"
+        # Also install in hicolor theme structure for better compatibility
+        mkdir -p "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps"
+        cp "$ICON_SOURCE" "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps/windows-app-for-linux.png"
         # Also copy to snap meta/gui directory (snapcraft checks this first)
         mkdir -p "$CRAFT_PART_INSTALL/meta/gui"
         cp "$ICON_SOURCE" "$CRAFT_PART_INSTALL/meta/gui/icon.png"
@@ -188,7 +199,7 @@ parts:
         cat > "$CRAFT_PART_INSTALL/usr/share/applications/windows-app-for-linux.desktop" << 'EOF'
       [Desktop Entry]
       Name=Windows App for Linux
-      Comment=Access Windows Cloud Devices from Linux
+      Comment=Unofficial client for Windows App - Access Azure Virtual Desktops on Linux
       Exec=windows-app-for-linux
       Icon=windows-app-for-linux
       Type=Application
@@ -198,7 +209,7 @@ parts:
         cat > "$CRAFT_PART_INSTALL/usr/share/applications/windows-app-for-linux.desktop" << 'EOF'
       [Desktop Entry]
       Name=Windows App for Linux
-      Comment=Access Windows Cloud Devices from Linux
+      Comment=Unofficial client for Windows App - Access Azure Virtual Desktops on Linux
       Exec=windows-app-for-linux
       Type=Application
       Categories=Network;WebBrowser;RemoteAccess;
@@ -215,9 +226,18 @@ parts:
           if [ -f "$ICON_PATH" ]; then
             mkdir -p "$CRAFT_PRIME/usr/share/pixmaps"
             cp "$ICON_PATH" "$CRAFT_PRIME/usr/share/pixmaps/windows-app-for-linux.png"
+            # Also ensure hicolor theme icon is present
+            mkdir -p "$CRAFT_PRIME/usr/share/icons/hicolor/512x512/apps"
+            cp "$ICON_PATH" "$CRAFT_PRIME/usr/share/icons/hicolor/512x512/apps/windows-app-for-linux.png"
             break
           fi
         done
+      fi
+      # Force update icon cache in prime directory
+      if [ -d "$CRAFT_PRIME/usr/share/icons/hicolor" ]; then
+        if command -v gtk-update-icon-cache &> /dev/null; then
+          gtk-update-icon-cache -f -t "$CRAFT_PRIME/usr/share/icons/hicolor" 2>/dev/null || true
+        fi
       fi
 
   electron-launch:
@@ -246,8 +266,10 @@ parts:
       export ELECTRON_IS_DEV=0
       
       # Set library path to include snap libraries, Electron's own libraries, and base snap libraries
-      # Electron bundles some libraries in its dist directory
+      # Electron bundles some libraries in its dist directory and subdirectories
       ELECTRON_LIB_DIR="$SNAP/electron-app/node_modules/electron/dist"
+      ELECTRON_LIB_SUBDIR="$ELECTRON_LIB_DIR/lib"
+      ELECTRON_SWIFTSHADER_DIR="$ELECTRON_LIB_DIR/swiftshader"
       # Base snap libraries (core24)
       BASE_SNAP_LIB="/snap/core24/current/lib/x86_64-linux-gnu"
       # ALSA plugin dir
@@ -257,7 +279,8 @@ parts:
       # GDK-Pixbuf loaders directory
       GDK_PIXBUF_LOADER_DIR="$SNAP/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders"
       # Snap's own libraries from stage-packages (do NOT append host LD_LIBRARY_PATH)
-      export LD_LIBRARY_PATH="$ELECTRON_LIB_DIR:$SNAP/lib:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib:$ALSA_LIB_DIR:$MESA_LIB_DIR:$GDK_PIXBUF_LOADER_DIR:$BASE_SNAP_LIB"
+      # Include Electron's dist directory and common subdirectories where it stores libraries like libOSSlib.so
+      export LD_LIBRARY_PATH="$ELECTRON_LIB_DIR:$ELECTRON_LIB_SUBDIR:$ELECTRON_SWIFTSHADER_DIR:$SNAP/lib:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib:$ALSA_LIB_DIR:$MESA_LIB_DIR:$GDK_PIXBUF_LOADER_DIR:$BASE_SNAP_LIB"
       
       # Set GSettings schema path for GTK applications
       export XDG_DATA_DIRS="$SNAP/usr/share:$XDG_DATA_DIRS"
@@ -284,6 +307,93 @@ parts:
       exec "$ELECTRON_BIN" --no-sandbox "$APP_PATH" "$@"
       SCRIPTEOF
       chmod +x $CRAFT_PART_INSTALL/bin/electron-launch
+      
+      # Create icon cache update script for manual use
+      cat > $CRAFT_PART_INSTALL/bin/update-icon-cache << 'CACHEEOF'
+      #!/bin/bash
+      # Manual icon cache update script
+      # Run: windows-app-for-linux.update-icon-cache
+      
+      echo "Updating icon cache for Windows App for Linux..."
+      
+      # Update snap's icon cache
+      if [ -d "$SNAP/usr/share/icons/hicolor" ]; then
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+          echo "Updating snap icon cache..."
+          gtk-update-icon-cache -f -t "$SNAP/usr/share/icons/hicolor" 2>/dev/null && echo "✓ Snap icon cache updated" || echo "✗ Failed to update snap icon cache"
+        fi
+      fi
+      
+      # Try to update system icon cache (may require permissions)
+      if [ -d "/usr/share/icons/hicolor" ]; then
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+          echo "Updating system icon cache (may require sudo)..."
+          sudo gtk-update-icon-cache -f -t "/usr/share/icons/hicolor" 2>/dev/null && echo "✓ System icon cache updated" || echo "✗ Failed to update system icon cache (may need sudo)"
+        fi
+      fi
+      
+      # Update desktop database
+      if command -v update-desktop-database >/dev/null 2>&1; then
+        echo "Updating desktop database..."
+        if [ -d "$HOME/.local/share/applications" ]; then
+          update-desktop-database "$HOME/.local/share/applications" 2>/dev/null && echo "✓ Desktop database updated" || echo "✗ Failed to update desktop database"
+        fi
+      fi
+      
+      echo ""
+      echo "Icon cache update complete!"
+      echo "If icons still don't update, try:"
+      echo "  1. Log out and log back in"
+      echo "  2. Restart your desktop environment"
+      echo "  3. Run: sudo gtk-update-icon-cache -f -t /usr/share/icons/hicolor"
+      CACHEEOF
+      chmod +x $CRAFT_PART_INSTALL/bin/update-icon-cache
+
+  icon-cache-hook:
+    plugin: nil
+    override-build: |
+      # Create configure hook to update icon cache on install/update
+      mkdir -p $CRAFT_PART_INSTALL/meta/hooks
+      cat > $CRAFT_PART_INSTALL/meta/hooks/configure << 'HOOKEOF'
+      #!/bin/sh
+      # Configure hook - runs on snap install/update
+      # Update system icon cache to ensure new icons are recognized
+      
+      # Update hicolor icon cache if it exists
+      if [ -d "$SNAP/usr/share/icons/hicolor" ]; then
+        # Try to update icon cache using system gtk-update-icon-cache
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+          gtk-update-icon-cache -f -t "$SNAP/usr/share/icons/hicolor" 2>/dev/null || true
+        fi
+      fi
+      
+      # Also update system-wide icon cache if we have access
+      # This requires desktop interface, which we have
+      if [ -d "/usr/share/icons/hicolor" ] && [ -w "/usr/share/icons/hicolor" ]; then
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+          # Update system cache (may require permissions)
+          gtk-update-icon-cache -f -t "/usr/share/icons/hicolor" 2>/dev/null || true
+        fi
+      fi
+      
+      # Force desktop environment to refresh icon cache
+      # Try different methods depending on desktop environment
+      if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
+      fi
+      
+      # Notify desktop environment to refresh (if possible)
+      if [ -n "$XDG_CURRENT_DESKTOP" ]; then
+        # Try to refresh icon cache via D-Bus (if available)
+        if command -v dbus-send >/dev/null 2>&1; then
+          dbus-send --session --type=method_call \
+            --dest=org.freedesktop.FileManager1 \
+            /org/freedesktop/FileManager1 \
+            org.freedesktop.DBus.Peer.Ping 2>/dev/null || true
+        fi
+      fi
+      HOOKEOF
+      chmod +x $CRAFT_PART_INSTALL/meta/hooks/configure
 
 plugs:
   camera:
