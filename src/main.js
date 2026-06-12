@@ -1369,6 +1369,9 @@ app.whenReady().then(() => {
       'midi',
       'midiSysex',
       'pointerLock',
+      'clipboard-read',
+      'clipboard-write',
+      'clipboard-sanitized-write',
       'fullscreen',
       'openExternal'
     ];
@@ -1397,6 +1400,9 @@ app.whenReady().then(() => {
       'midi',
       'midiSysex',
       'pointerLock',
+      'clipboard-read',
+      'clipboard-write',
+      'clipboard-sanitized-write',
       'fullscreen'
     ];
 
