@@ -7,10 +7,10 @@
     "start": "electron .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "build:appimage": "electron-builder --linux AppImage",
-    "build:flatpak": "electron-builder --linux flatpak",
-    "build:snap": "electron-builder --linux snap",
-    "build": "electron-builder --linux AppImage flatpak snap"
+    "build:appimage": "electron-builder --linux AppImage --publish never",
+    "build:flatpak": "electron-builder --linux flatpak --publish never",
+    "build:snap": "electron-builder --linux snap --publish never",
+    "build": "electron-builder --linux AppImage flatpak snap --publish never"
   },
   "keywords": [
     "electron",
@@ -31,7 +31,6 @@
   "build": {
     "appId": "io.github.mariuszkopowski.WindowsAppForLinux",
     "productName": "Windows App",
-    "publish": null,
     "files": [
       "app/**/*",
       "assets/**/*"
