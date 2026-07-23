@@ -97,6 +97,15 @@ npm run build:snap      # requires squashfs-tools on the host
 npm run build            # all three targets
 ```
 
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the full development guide.
+
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — how the wrapper works: window model, UA spoof layers, session/security, GPU strategy
+- [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) — dev setup, tests, packaging, CI, release checklist
+- [docs/PLAN.md](docs/PLAN.md) — roadmap, implementation phases, native-client comparison
+- [docs/TASKS.md](docs/TASKS.md) — task register with acceptance criteria and test scripts
+
 ## License
 
 [MIT](LICENSE)
