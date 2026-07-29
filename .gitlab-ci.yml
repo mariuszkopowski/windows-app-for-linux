@@ -20,8 +20,6 @@ test:
 build:
   stage: build
   image: node:20
-  tags:
-    - docker
   cache:
     paths:
       - node_modules/
