@@ -1,0 +1,45 @@
+stages:
+  - test
+  - build
+
+variables:
+  GIT_STRATEGY: clone
+
+test:
+  stage: test
+  image: node:20
+  cache:
+    paths:
+      - node_modules/
+  script:
+    - npm ci
+    - npm test
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+
+build:
+  stage: build
+  image: node:20
+  tags:
+    - docker
+  cache:
+    paths:
+      - node_modules/
+  before_script:
+    - apt-get update && apt-get install -y flatpak flatpak-builder squashfs-tools
+    - flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+    - flatpak install -y --user flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.electronjs.Electron2.BaseApp//24.08
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/*.AppImage
+      - dist/*.flatpak
+      - dist/*.snap
+    expire_in: 1 week
+    when: on_success
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v/'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "rewrite"'
