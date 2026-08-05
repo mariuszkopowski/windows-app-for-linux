@@ -4,45 +4,45 @@ updated: 2026-08-05
 tags: [windows-app-for-linux, inventory, documentation, our-code]
 ---
 
-# Inwentaryzacja kodu "naszego" (windows-app-for-linux)
+# Inventory of "Our Code" (windows-app-for-linux)
 
-> Utworzone w ramach inwentaryzacji `apps/*` (Zasada 1). Indeks — szczegóły w
-> `CLAUDE.md` + `docs/ARCHITECTURE.md` (repo ma już pełną dokumentację). Stan
-> 2026-08-05. Główna dokumentacja: `../CLAUDE.md`, `docs/ARCHITECTURE.md`,
-> `docs/DEVELOPMENT.md`. Ten plik wypunktowuje elementy "nasze" wg Zasady 1.
+> Created under the `apps/*` inventory (Rule 1). Index — details in
+> `CLAUDE.md` + `docs/ARCHITECTURE.md` (repo already has full docs). Status
+> 2026-08-05. Main docs: `../CLAUDE.md`, `docs/ARCHITECTURE.md`,
+> `docs/DEVELOPMENT.md`. This file lists the "our" elements per Rule 1.
 
-## Co to jest "nasze"
+## What is "ours"
 
-**Windows App for Linux** — Electron wrapper dla `https://windows.cloud.microsoft`
+**Windows App for Linux** — an Electron wrapper for `https://windows.cloud.microsoft`
 (Windows App / Azure Virtual Desktop). AppImage + Flatpak (Flathub) + Snap.
-Target: Linux desktopy (Nobara/Wayland).
+Target: Linux desktops (Nobara/Wayland).
 
-## Spis elementów
+## Element list
 
-| Element | Plik | Co robi | Po co |
+| Element | File | What it does | Why |
 |---|---|---|---|
-| Main | `app/index.js` | Entry; Chromium flags (Vaapi, SharedArrayBuffer, Ozone) przed app.ready | H.264 decode + RDP codec + Wayland |
-| Config | `app/config/options.js`, `index.js` | Defaults (UA, URL, size) + merge (config.json → CLI → defaults) | Konfiguracja |
+| Main | `app/index.js` | Entry; Chromium flags (Vaapi, SharedArrayBuffer, Ozone) before app.ready | H.264 decode + RDP codec + Wayland |
+| Config | `app/config/options.js`, `index.js` | Defaults (UA, URL, size) + merge (config.json → CLI → defaults) | Configuration |
 | Main window | `app/mainAppWindow/index.js` | BrowserWindow lifecycle, UA injection, windowOpenHandler, session | AVD web client |
-| Settings | `app/settings/` | BrowserWindow + preload (contextBridge) + settings.html | Edycja config.json |
+| Settings | `app/settings/` | BrowserWindow + preload (contextBridge) + settings.html | Edit config.json |
 | Browser preload | `app/browser/preload.js` | Spoof `navigator.platform` + `userAgentData` (Client Hints) | Edge/Windows UA (Conditional Access) |
-| CI | `.gitlab-ci.yml`, `.github/workflows/build.yml` | Build appimage/flatpak/snap | Dystrybucja |
+| CI | `.gitlab-ci.yml`, `.github/workflows/build.yml` | Build appimage/flatpak/snap | Distribution |
 
-## Kluczowe decyzje (Zasada 1 — warunki)
-- **UA spoof mandatory** (2-warstwowy: `setUserAgent` + JS patch) — Intune MAM.
-- **Session partition `persist:windows-app` shared** — Entra ID cookies między oknami.
-- **`contextIsolation: false`** (preload patchuje navigator) + `webSecurity: true`
-  (AVD wymaga COOP/COEP).
-- **Auth popups:** `isAuthUrl()` (MS) + `isLikelyAuthPopup()` (heurystyka dla ADFS/Okta).
-- **AVD state clear** (indexeddb/sessionstorage/sw) przed loadURL — bez localStorage/cookies.
+## Key decisions (Rule 1 — conditions)
+- **UA spoof mandatory** (2-layer: `setUserAgent` + JS patch) — Intune MAM.
+- **Session partition `persist:windows-app` shared** — Entra ID cookies across windows.
+- **`contextIsolation: false`** (preload patches navigator) + `webSecurity: true`
+  (AVD requires COOP/COEP).
+- **Auth popups:** `isAuthUrl()` (MS) + `isLikelyAuthPopup()` (heuristic for ADFS/Okta).
+- **AVD state clear** (indexeddb/sessionstorage/sw) before loadURL — no localStorage/cookies.
 
-## Pułapki (z CLAUDE.md)
-- Camera w AVD to ograniczenie MS web clienta, NIE wrappera — nie "fixować".
-- Fullscreen (F11) → web app sam przechwytuje klawisze.
-- `autoHideMenuBar` ukrywa File menu → Settings tylko przez tray.
+## Pitfalls (from CLAUDE.md)
+- Camera in AVD is a limitation of the MS web client, NOT the wrapper — don't "fix" it.
+- Fullscreen (F11) → the web app captures keys itself.
+- `autoHideMenuBar` hides the File menu → Settings only via tray.
 
-## Uwagi
-- Symlink Obsidian założony 2026-08-05 (`Projects/lifeos/apps/windows-app-for-linux/docs →
+## Notes
+- Obsidian symlink created 2026-08-05 (`Projects/lifeos/apps/windows-app-for-linux/docs →
   ~/Projects/apps/windows-app-for-linux/docs`).
-- Branch repo = **`github-fix`** (lokalnie; remote `github/main` + `origin/main`).
-- Repo ma już CLAUDE.md — ten indeks tylko wskaźnik Zasady 1.
+- Repo branch = **`github-fix`** (local; remote `github/main` + `origin/main`).
+- Repo already has CLAUDE.md — this index is only a Rule 1 pointer.
