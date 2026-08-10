@@ -1,6 +1,7 @@
 const { Menu, BrowserWindow, app } = require('electron');
 const { t } = require('../i18n');
 const { createSettingsWindow } = require('../settings');
+const { createMediaCheckWindow } = require('../mediaCheck');
 
 function applyMenu() {
   const template = [
@@ -11,6 +12,11 @@ function applyMenu() {
           label: t('menu.settings'),
           accelerator: 'CmdOrCtrl+,',
           click: () => createSettingsWindow(BrowserWindow.getFocusedWindow()),
+        },
+        {
+          label: t('menu.mediaCheck'),
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => createMediaCheckWindow(BrowserWindow.getFocusedWindow()),
         },
         { type: 'separator' },
         {
@@ -69,7 +75,9 @@ function applyMenu() {
           accelerator: 'Alt+Left',
           click: () => {
             const win = BrowserWindow.getFocusedWindow();
-            if (win?.webContents.canGoBack()) win.webContents.goBack();
+            if (win?.webContents.navigationHistory.canGoBack()) {
+              win.webContents.navigationHistory.goBack();
+            }
           },
         },
         {
@@ -77,7 +85,9 @@ function applyMenu() {
           accelerator: 'Alt+Right',
           click: () => {
             const win = BrowserWindow.getFocusedWindow();
-            if (win?.webContents.canGoForward()) win.webContents.goForward();
+            if (win?.webContents.navigationHistory.canGoForward()) {
+              win.webContents.navigationHistory.goForward();
+            }
           },
         },
       ],

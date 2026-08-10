@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; media-src blob:; img-src data:"
+  >
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Camera &amp; Microphone Check</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      background: #10141c;
+      color: #f5f7fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 680px;
+      background:
+        radial-gradient(circle at top left, rgba(61, 135, 255, 0.16), transparent 34rem),
+        #10141c;
+    }
+    main {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+    h1 {
+      margin: 0 0 7px;
+      font-size: 26px;
+      letter-spacing: -0.02em;
+    }
+    header p, .muted {
+      margin: 0;
+      color: #aeb8c8;
+      line-height: 1.45;
+    }
+    .privacy {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border: 1px solid #2d6f57;
+      border-radius: 999px;
+      color: #9de1c2;
+      background: rgba(32, 105, 76, 0.18);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+      gap: 18px;
+    }
+    .card {
+      overflow: hidden;
+      border: 1px solid #273040;
+      border-radius: 14px;
+      background: rgba(23, 29, 40, 0.94);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.22);
+    }
+    .card-body { padding: 18px; }
+    .preview {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: #090c11;
+    }
+    video {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .preview.running video { display: block; }
+    .preview-copy {
+      padding: 20px;
+      text-align: center;
+      color: #8490a3;
+    }
+    .preview.running .preview-copy { display: none; }
+    .preview-copy strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #dce3ee;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #c9d2df;
+      font-size: 12px;
+      font-weight: 650;
+    }
+    select, button {
+      min-height: 40px;
+      border-radius: 8px;
+      font: inherit;
+    }
+    select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #364156;
+      background: #0f141d;
+      color: #f5f7fb;
+    }
+    button {
+      padding: 9px 14px;
+      border: 0;
+      background: #3d87ff;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    button:hover { background: #5697ff; }
+    button.secondary {
+      background: #293245;
+      color: #dce4ef;
+    }
+    button.secondary:hover { background: #354159; }
+    button:disabled {
+      opacity: 0.55;
+      cursor: wait;
+    }
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .meter-shell {
+      height: 14px;
+      margin-top: 10px;
+      overflow: hidden;
+      border: 1px solid #30394a;
+      border-radius: 999px;
+      background: #0b0f16;
+    }
+    .meter {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #31c48d 0 72%, #f6c344 85%, #ff6b6b);
+      transition: width 70ms linear;
+    }
+    .status-list {
+      display: grid;
+      gap: 10px;
+    }
+    .status {
+      padding: 12px;
+      border: 1px solid #30394a;
+      border-radius: 10px;
+      background: #111721;
+    }
+    .status-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #788499;
+      box-shadow: 0 0 0 4px rgba(120, 132, 153, 0.12);
+    }
+    .status[data-state="ok"] .dot {
+      background: #31c48d;
+      box-shadow: 0 0 0 4px rgba(49, 196, 141, 0.12);
+    }
+    .status[data-state="error"] .dot {
+      background: #ff6b6b;
+      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.12);
+    }
+    .status[data-state="working"] .dot {
+      background: #f6c344;
+      box-shadow: 0 0 0 4px rgba(246, 195, 68, 0.12);
+    }
+    .status-detail {
+      color: #aeb8c8;
+      font-size: 12px;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+    details {
+      margin-top: 14px;
+      padding-top: 13px;
+      border-top: 1px solid #2b3444;
+      color: #b7c0cf;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    summary {
+      color: #dce4ef;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    code {
+      display: block;
+      margin: 7px 0;
+      padding: 8px;
+      border-radius: 7px;
+      background: #0b0f16;
+      color: #a8c7ff;
+      white-space: pre-wrap;
+      user-select: all;
+    }
+    .session-note {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-left: 3px solid #3d87ff;
+      background: rgba(61, 135, 255, 0.09);
+      color: #c5cfdd;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .session-note code {
+      display: inline;
+      margin: 0;
+      padding: 2px 5px;
+    }
+    @media (max-width: 760px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Camera &amp; microphone check</h1>
+        <p>Verify Linux and package access before starting a remote session.</p>
+      </div>
+      <div class="privacy">Local test · nothing is recorded</div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <div class="preview" id="preview">
+          <video id="video" autoplay muted playsinline></video>
+          <div class="preview-copy">
+            <strong>Preview is stopped</strong>
+            Start the test to request access and inspect your devices.
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="controls">
+            <div>
+              <label for="camera">Camera</label>
+              <select id="camera"><option value="">System default</option></select>
+            </div>
+            <div>
+              <label for="microphone">Microphone</label>
+              <select id="microphone"><option value="">System default</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="meter" style="margin-top: 15px">Microphone level</label>
+            <div
+              class="meter-shell"
+              id="meter"
+              role="meter"
+              aria-label="Microphone input level"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow="0"
+            >
+              <div class="meter" id="meter-fill"></div>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="start">Start test</button>
+            <button class="secondary" id="stop" disabled>Stop</button>
+            <button class="secondary" id="refresh">Refresh devices</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card">
+        <div class="card-body">
+          <div class="status-list">
+            <div class="status" id="camera-status" data-state="idle">
+              <div class="status-title"><span class="dot"></span>Camera</div>
+              <div class="status-detail">Not tested yet.</div>
+            </div>
+            <div class="status" id="microphone-status" data-state="idle">
+              <div class="status-title"><span class="dot"></span>Microphone</div>
+              <div class="status-detail">Not tested yet.</div>
+            </div>
+          </div>
+
+          <details>
+            <summary>Linux package checks</summary>
+            <p>Snap must expose both interfaces:</p>
+            <code>snap connections windows-app-for-linux
+sudo snap connect windows-app-for-linux:camera
+sudo snap connect windows-app-for-linux:audio-record</code>
+            <p>Flatpak must expose audio and video devices:</p>
+            <code>flatpak info --show-permissions io.github.mariuszkopowski.WindowsAppForLinux</code>
+            <p>Close other apps that may hold the camera, and verify the selected input in your desktop sound settings.</p>
+          </details>
+        </div>
+      </aside>
+    </div>
+
+    <div class="session-note">
+      Passing this test proves the wrapper can capture locally. In the remote-session toolbar,
+      enable <strong>Microphone</strong> and <strong>Camera</strong>, then reconnect. The host must
+      also allow <code>audiocapturemode:i:1</code> and <code>camerastoredirect:s:*</code>.
+    </div>
+  </main>
+
+  <script>
+    'use strict';
+
+    const cameraSelect = document.getElementById('camera');
+    const microphoneSelect = document.getElementById('microphone');
+    const cameraStatus = document.getElementById('camera-status');
+    const microphoneStatus = document.getElementById('microphone-status');
+    const preview = document.getElementById('preview');
+    const video = document.getElementById('video');
+    const startButton = document.getElementById('start');
+    const stopButton = document.getElementById('stop');
+    const refreshButton = document.getElementById('refresh');
+    const meter = document.getElementById('meter');
+    const meterFill = document.getElementById('meter-fill');
+
+    let cameraStream = null;
+    let microphoneStream = null;
+    let audioContext = null;
+    let meterFrame = null;
+    let running = false;
+    let testGeneration = 0;
+
+    function setStatus(element, state, detail) {
+      element.dataset.state = state;
+      element.querySelector('.status-detail').textContent = detail;
+    }
+
+    function describeError(error, deviceName) {
+      const prefix = deviceName + ': ';
+      if (!error) return prefix + 'Unknown capture error.';
+      if (error.name === 'NotAllowedError' || error.name === 'SecurityError') {
+        return prefix + 'access was denied. Check desktop privacy controls and package permissions.';
+      }
+      if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        return prefix + 'no device was found. Reconnect it, then refresh devices.';
+      }
+      if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        return prefix + 'the device is busy or unavailable. Close other camera/audio apps and retry.';
+      }
+      if (error.name === 'OverconstrainedError') {
+        return prefix + 'the selected device is no longer available. Choose another device.';
+      }
+      return prefix + (error.message || error.name || 'capture failed.');
+    }
+
+    function stopTracks(stream) {
+      if (stream) stream.getTracks().forEach(track => track.stop());
+    }
+
+    function stopMeter() {
+      if (meterFrame) cancelAnimationFrame(meterFrame);
+      meterFrame = null;
+      meterFill.style.width = '0%';
+      meter.setAttribute('aria-valuenow', '0');
+      if (audioContext) audioContext.close().catch(() => {});
+      audioContext = null;
+    }
+
+    function stopTest({ resetStatus = false } = {}) {
+      testGeneration += 1;
+      stopTracks(cameraStream);
+      stopTracks(microphoneStream);
+      cameraStream = null;
+      microphoneStream = null;
+      video.srcObject = null;
+      preview.classList.remove('running');
+      stopMeter();
+      running = false;
+      startButton.disabled = false;
+      startButton.textContent = 'Start test';
+      stopButton.disabled = true;
+      if (resetStatus) {
+        setStatus(cameraStatus, 'idle', 'Test stopped.');
+        setStatus(microphoneStatus, 'idle', 'Test stopped.');
+      }
+    }
+
+    function selectedConstraint(select) {
+      return select.value ? { exact: select.value } : undefined;
+    }
+
+    function cameraConstraints() {
+      const deviceId = selectedConstraint(cameraSelect);
+      return {
+        ...(deviceId ? { deviceId } : {}),
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 },
+      };
+    }
+
+    function microphoneConstraints() {
+      const deviceId = selectedConstraint(microphoneSelect);
+      return {
+        ...(deviceId ? { deviceId } : {}),
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      };
+    }
+
+    function describeCamera(track) {
+      const settings = track.getSettings();
+      const dimensions = settings.width && settings.height
+        ? settings.width + '×' + settings.height
+        : 'resolution unknown';
+      const fps = settings.frameRate ? ' at ' + Math.round(settings.frameRate) + ' fps' : '';
+      return (track.label || 'Camera ready') + ' · ' + dimensions + fps;
+    }
+
+    function describeMicrophone(track) {
+      const settings = track.getSettings();
+      const rate = settings.sampleRate
+        ? Math.round(settings.sampleRate / 100) / 10 + ' kHz'
+        : 'sample rate unknown';
+      const channels = settings.channelCount
+        ? ' · ' + settings.channelCount + ' channel' + (settings.channelCount === 1 ? '' : 's')
+        : '';
+      return (track.label || 'Microphone ready') + ' · ' + rate + channels;
+    }
+
+    function startMeter(stream) {
+      audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.7;
+      source.connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+
+      const draw = () => {
+        analyser.getByteTimeDomainData(samples);
+        let sum = 0;
+        for (const sample of samples) {
+          const value = (sample - 128) / 128;
+          sum += value * value;
+        }
+        const level = Math.min(100, Math.round(Math.sqrt(sum / samples.length) * 360));
+        meterFill.style.width = level + '%';
+        meter.setAttribute('aria-valuenow', String(level));
+        meterFrame = requestAnimationFrame(draw);
+      };
+      draw();
+    }
+
+    async function refreshDevices() {
+      if (!navigator.mediaDevices) {
+        throw new Error('MediaDevices API is unavailable.');
+      }
+
+      const previousCamera = cameraSelect.value;
+      const previousMicrophone = microphoneSelect.value;
+      const devices = await navigator.mediaDevices.enumerateDevices();
+
+      const populate = (select, items, fallback, previous) => {
+        select.replaceChildren(new Option('System default', ''));
+        items.forEach((device, index) => {
+          select.add(new Option(device.label || fallback + ' ' + (index + 1), device.deviceId));
+        });
+        if ([...select.options].some(option => option.value === previous)) {
+          select.value = previous;
+        }
+      };
+
+      populate(
+        cameraSelect,
+        devices.filter(device => device.kind === 'videoinput'),
+        'Camera',
+        previousCamera
+      );
+      populate(
+        microphoneSelect,
+        devices.filter(device => device.kind === 'audioinput'),
+        'Microphone',
+        previousMicrophone
+      );
+    }
+
+    async function startTest() {
+      stopTest();
+      const generation = testGeneration;
+      running = true;
+      startButton.disabled = true;
+      startButton.textContent = 'Testing…';
+      stopButton.disabled = false;
+      setStatus(cameraStatus, 'working', 'Requesting camera access…');
+      setStatus(microphoneStatus, 'working', 'Requesting microphone access…');
+
+      const [cameraResult, microphoneResult] = await Promise.allSettled([
+        navigator.mediaDevices.getUserMedia({ video: cameraConstraints(), audio: false }),
+        navigator.mediaDevices.getUserMedia({ video: false, audio: microphoneConstraints() }),
+      ]);
+
+      if (!running || generation !== testGeneration) {
+        if (cameraResult.status === 'fulfilled') stopTracks(cameraResult.value);
+        if (microphoneResult.status === 'fulfilled') stopTracks(microphoneResult.value);
+        return;
+      }
+
+      if (cameraResult.status === 'fulfilled') {
+        cameraStream = cameraResult.value;
+        video.srcObject = cameraStream;
+        preview.classList.add('running');
+        setStatus(cameraStatus, 'ok', describeCamera(cameraStream.getVideoTracks()[0]));
+      } else {
+        setStatus(cameraStatus, 'error', describeError(cameraResult.reason, 'Camera'));
+      }
+
+      if (microphoneResult.status === 'fulfilled') {
+        microphoneStream = microphoneResult.value;
+        setStatus(
+          microphoneStatus,
+          'ok',
+          describeMicrophone(microphoneStream.getAudioTracks()[0])
+        );
+        startMeter(microphoneStream);
+      } else {
+        setStatus(
+          microphoneStatus,
+          'error',
+          describeError(microphoneResult.reason, 'Microphone')
+        );
+      }
+
+      await refreshDevices().catch(() => {});
+      startButton.disabled = false;
+      startButton.textContent = 'Retest';
+    }
+
+    startButton.addEventListener('click', () => {
+      startTest().catch(error => {
+        setStatus(cameraStatus, 'error', describeError(error, 'Media'));
+        setStatus(microphoneStatus, 'error', describeError(error, 'Media'));
+        stopTest();
+      });
+    });
+    stopButton.addEventListener('click', () => stopTest({ resetStatus: true }));
+    refreshButton.addEventListener('click', () => {
+      refreshDevices().catch(error => {
+        setStatus(cameraStatus, 'error', describeError(error, 'Devices'));
+      });
+    });
+    cameraSelect.addEventListener('change', () => {
+      if (running) startTest();
+    });
+    microphoneSelect.addEventListener('change', () => {
+      if (running) startTest();
+    });
+    if (navigator.mediaDevices) {
+      navigator.mediaDevices.addEventListener('devicechange', () => {
+        refreshDevices().catch(() => {});
+      });
+    }
+    window.addEventListener('beforeunload', () => stopTest());
+
+    refreshDevices().catch(() => {});
+  </script>
+</body>
+</html>

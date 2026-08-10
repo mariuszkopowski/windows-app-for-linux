@@ -50,6 +50,13 @@ function rebuildMenu() {
         createSettingsWindow(mainWindow);
       },
     },
+    {
+      label: t('tray.mediaCheck'),
+      click: () => {
+        const { createMediaCheckWindow } = require('../mediaCheck');
+        createMediaCheckWindow(mainWindow);
+      },
+    },
   ];
 
   if (avdWindows.length > 0) {

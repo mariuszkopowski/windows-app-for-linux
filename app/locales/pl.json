@@ -3,6 +3,7 @@
   "tray.openSessions": "Otwarte sesje:",
   "tray.avdSession": "Sesja AVD",
   "tray.settings": "Ustawienia",
+  "tray.mediaCheck": "Test kamery i mikrofonu",
   "tray.quit": "Zakończ",
   "tray.quitAndClear": "Zakończ i wyczyść sesję",
 
@@ -19,6 +20,9 @@
   "menu.back": "Wstecz",
   "menu.forward": "Dalej",
   "menu.settings": "Ustawienia",
+  "menu.mediaCheck": "Test kamery i mikrofonu",
+
+  "mediaCheck.title": "Test kamery i mikrofonu",
 
   "settings.title": "Ustawienia",
   "settings.cloudEnvironment": "Środowisko cloud",

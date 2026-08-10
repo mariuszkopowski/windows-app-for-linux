@@ -71,7 +71,31 @@ const ALLOWED_PERMISSIONS = [
 ];
 
 function permissionAllowed(permission) {
-  return ALLOWED_PERMISSIONS.includes(permission);
+  return ALLOWED_PERMISSIONS.includes(
+    typeof permission === 'string' ? permission.toLowerCase() : ''
+  );
+}
+
+const MEDIA_PERMISSIONS = ['camera', 'microphone', 'media'];
+const TRUSTED_MEDIA_HOSTS = new Set([
+  'windows.cloud.microsoft',
+  'rdweb.wvd.azure.us',
+  'rdweb.wvd.microsoft.us',
+]);
+
+function isTrustedMediaOrigin(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && TRUSTED_MEDIA_HOSTS.has(parsed.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function shouldGrantPermission(permission, requestingUrl, { internalMediaCheck = false } = {}) {
+  const normalized = typeof permission === 'string' ? permission.toLowerCase() : '';
+  if (internalMediaCheck) return MEDIA_PERMISSIONS.includes(normalized);
+  return permissionAllowed(normalized) && isTrustedMediaOrigin(requestingUrl);
 }
 
 function stripCspReportOnly(headers) {
@@ -115,6 +139,8 @@ module.exports = {
   parseUaVersions,
   clearAvdSessionState,
   permissionAllowed,
+  isTrustedMediaOrigin,
+  shouldGrantPermission,
   stripCspReportOnly,
   handleRenderProcessGone,
   createAboutBlankInterceptor,

@@ -1,8 +1,9 @@
-const { app } = require('electron');
+const { app, session } = require('electron');
 const { buildFeatureFlags } = require('./chromiumFlags');
 
 const isWayland = !!process.env.WAYLAND_DISPLAY;
 const isFlatpak = !!process.env.FLATPAK_ID;
+const startInMediaCheck = process.argv.includes('--media-check');
 
 if (isFlatpak) {
   // Flatpak: Wayland only. GPU disabled by default due to sandbox GPU driver
@@ -45,15 +46,25 @@ if (!app.requestSingleInstanceLock()) {
 app.whenReady().then(async () => {
   const { load } = require('./i18n');
   const { applyMenu } = require('./menus/appMenu');
-  const { createMainWindow } = require('./mainAppWindow');
   load();
   applyMenu();
-  await createMainWindow();
+
+  if (startInMediaCheck) {
+    const config = require('./config');
+    const { configurePermissionHandlers } = require('./permissions');
+    const { createMediaCheckWindow } = require('./mediaCheck');
+    configurePermissionHandlers(session.fromPartition(config.sessionPartition));
+    createMediaCheckWindow();
+  } else {
+    const { createMainWindow } = require('./mainAppWindow');
+    await createMainWindow();
+  }
 });
 
 app.on('second-instance', () => {
-  const { getMainWindow } = require('./mainAppWindow');
-  const win = getMainWindow();
+  const win = startInMediaCheck
+    ? require('./mediaCheck').getMediaCheckWindow()
+    : require('./mainAppWindow').getMainWindow();
   if (win) {
     if (win.isMinimized()) win.restore();
     win.show();
