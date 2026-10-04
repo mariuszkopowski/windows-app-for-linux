@@ -46,7 +46,9 @@ app.whenReady().then(async () => {
   const { load } = require('./i18n');
   const { applyMenu } = require('./menus/appMenu');
   const { createMainWindow } = require('./mainAppWindow');
+  const { registerWebauthnHandlers } = require('./webauthn');
   load();
+  registerWebauthnHandlers();
   applyMenu();
   await createMainWindow();
 });

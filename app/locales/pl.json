@@ -41,5 +41,17 @@
   "settings.clearSessionDone": "Ciasteczka i pamięć podręczna wyczyszczone. Portal zostanie przeładowany.",
   "settings.restartNotice": "Zapisano. Uruchom ponownie aplikację, aby wszystkie zmiany zaczęły działać.",
   "settings.save": "Zapisz",
-  "settings.cancel": "Anuluj"
+  "settings.cancel": "Anuluj",
+
+  "passkey.title": "Zaloguj się kluczem dostępu",
+  "passkey.instructions": "Zeskanuj ten kod QR telefonem, na którym masz klucz dostępu.",
+  "passkey.hint": "Bluetooth musi być włączony na obu urządzeniach.",
+  "passkey.cancel": "Anuluj",
+  "passkey.status.waiting-for-scan": "Czekam na zeskanowanie kodu QR…",
+  "passkey.status.proximity": "Szukam telefonu…",
+  "passkey.status.connecting": "Łączę z telefonem…",
+  "passkey.status.authenticating": "Uwierzytelniam z telefonem…",
+  "passkey.status.waiting-for-phone": "Zatwierdź logowanie na telefonie.",
+  "passkey.status.retrying": "Połączenie z telefonem nie powiodło się. Zeskanuj nowy kod QR, aby spróbować ponownie.",
+  "passkey.status.error": "Problem z połączeniem"
 }

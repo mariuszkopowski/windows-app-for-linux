@@ -41,5 +41,17 @@
   "settings.clearSessionDone": "Cookies and cache cleared. The portal will reload.",
   "settings.restartNotice": "Saved. Restart the app for all changes to take effect.",
   "settings.save": "Save",
-  "settings.cancel": "Cancel"
+  "settings.cancel": "Cancel",
+
+  "passkey.title": "Sign in with a passkey",
+  "passkey.instructions": "Scan this QR code with the phone that holds your passkey.",
+  "passkey.hint": "Bluetooth must be on, on both devices.",
+  "passkey.cancel": "Cancel",
+  "passkey.status.waiting-for-scan": "Waiting for you to scan the QR code…",
+  "passkey.status.proximity": "Looking for your phone…",
+  "passkey.status.connecting": "Connecting to your phone…",
+  "passkey.status.authenticating": "Authenticating with your phone…",
+  "passkey.status.waiting-for-phone": "Approve the sign-in on your phone.",
+  "passkey.status.retrying": "The connection to your phone failed. Scan the new QR code to try again.",
+  "passkey.status.error": "Connection problem"
 }
