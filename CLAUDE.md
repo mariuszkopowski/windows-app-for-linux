@@ -65,6 +65,8 @@ app/
 
 **Auth popups from federated IdPs (ADFS, Okta, Ping, ...) can't be allow-listed by domain** — `isAuthUrl()` only covers Microsoft's own domains. `isLikelyAuthPopup()` (window size/disposition heuristic) is a fallback that lets these stay in-app as a modal instead of falling through to `shell.openExternal`.
 
+**`window.open('about:blank', …, 'popup')` is allowed as a modal auth popup** (`isBlankAuthPopup`). MSAL-style sign-in opens a blank popup first and navigates it to the IdP afterwards; denying it returns `null` to the page and the sign-in never appears (issue #12, AVD permission consent). Plain `about:blank` without popup hints is still denied, and requests from tracked auth popups (`authPopupIds`) are exempt from `createAboutBlankInterceptor`.
+
 **AVD session windows clear indexeddb/sessionstorage/serviceworkers/cachestorage before `loadURL`** (`clearAvdSessionState`) to avoid a grey screen on reconnect. `localStorage` and cookies are deliberately excluded — they hold the portal's first-run flags (`preload.js`) and SSO state, which live on the same shared origin.
 
 **Camera doesn't always work in AVD sessions, and it's not a bug in this wrapper.** `permissionAllowed()` grants the `camera` permission unconditionally, but whether the device actually shows up inside the remote session depends entirely on the Windows App **web client**'s webcam-redirection support, which is still incomplete on Microsoft's side (works more reliably in the native, non-web Windows App). Don't try to "fix" camera issues here — there is no code-level fix on the wrapper side. See `docs/PLAN.md` → "Znane ograniczenia".

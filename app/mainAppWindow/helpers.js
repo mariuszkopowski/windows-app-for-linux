@@ -44,6 +44,15 @@ function isLikelyAuthPopup(features, disposition) {
   return Boolean(width && height && width < 800 && height < 800);
 }
 
+// MSAL-style sign-in (e.g. the consent prompt when granting an AVD
+// permission) calls window.open('about:blank', name, 'popup,...') and navigates
+// that window to the IdP afterwards. Denying it hands the page `null`, so the
+// sign-in window never shows up. A plain about:blank without popup hints is
+// still denied (see createAboutBlankInterceptor).
+function isBlankAuthPopup(url, features, disposition) {
+  return url === 'about:blank' && isLikelyAuthPopup(features, disposition);
+}
+
 // Derives the Edge/Chromium major version from the configured User-Agent
 // string, so the sec-ch-ua headers and the userAgentData spoof (preload.js)
 // stay consistent with a user-edited UA instead of a second hardcoded copy.
@@ -85,10 +94,16 @@ function handleRenderProcessGone(details, reload) {
   if (details.reason !== 'clean-exit') reload();
 }
 
-function createAboutBlankInterceptor(openExternal) {
+// `isExempt(details)` lets requests from our own auth popups through, so their
+// about:blank -> IdP navigation isn't punted to the system browser.
+function createAboutBlankInterceptor(openExternal, isExempt = () => false) {
   let count = 0;
   function handler(details, callback) {
     const { url, resourceType } = details;
+    if (isExempt(details)) {
+      callback({});
+      return;
+    }
     if (url === 'about:blank') {
       count++;
       callback({ cancel: true });
@@ -112,6 +127,7 @@ module.exports = {
   isAvdUrl,
   isSafeExternalUrl,
   isLikelyAuthPopup,
+  isBlankAuthPopup,
   parseUaVersions,
   clearAvdSessionState,
   permissionAllowed,

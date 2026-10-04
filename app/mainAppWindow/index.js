@@ -8,6 +8,7 @@ const {
   isAvdUrl,
   isSafeExternalUrl,
   isLikelyAuthPopup,
+  isBlankAuthPopup,
   parseUaVersions,
   clearAvdSessionState,
   permissionAllowed,
@@ -17,6 +18,36 @@ const {
 } = require('./helpers');
 
 const avdWindows = new Set();
+// webContents ids of auth popups we opened; their about:blank -> IdP
+// navigation must not be intercepted (see createAboutBlankInterceptor).
+const authPopupIds = new Set();
+
+function authPopupResult(parent) {
+  return {
+    action: 'allow',
+    overrideBrowserWindowOptions: {
+      modal: true,
+      autoHideMenuBar: true,
+      parent,
+      width: 520,
+      height: 700,
+      webPreferences: {
+        partition: config.sessionPartition,
+        contextIsolation: false,
+        sandbox: false,
+        nodeIntegration: false,
+      },
+    },
+  };
+}
+
+function trackAuthPopup(wc) {
+  wc.on('did-create-window', (child) => {
+    const id = child.webContents.id;
+    authPopupIds.add(id);
+    child.on('closed', () => authPopupIds.delete(id));
+  });
+}
 
 const AUTH_CLEAR_ORIGINS = [
   'https://login.microsoftonline.com',
@@ -61,32 +92,20 @@ function createAvdWindow(url) {
   });
 
   win.webContents.setWindowOpenHandler(({ url: newUrl, features, disposition }) => {
+    if (isBlankAuthPopup(newUrl, features, disposition)) return authPopupResult(win);
     if (!newUrl || newUrl === 'about:blank') return { action: 'deny' };
     if (isAvdUrl(newUrl)) {
       createAvdWindow(newUrl);
       return { action: 'deny' };
     }
     if (isSafeExternalUrl(newUrl) && isLikelyAuthPopup(features, disposition)) {
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          modal: true,
-          parent: win,
-          width: 520,
-          height: 700,
-          webPreferences: {
-            partition: config.sessionPartition,
-            contextIsolation: false,
-            sandbox: false,
-            nodeIntegration: false,
-          },
-        },
-      };
+      return authPopupResult(win);
     }
     if (isSafeExternalUrl(newUrl)) shell.openExternal(newUrl);
     return { action: 'deny' };
   });
 
+  trackAuthPopup(win.webContents);
   win.webContents.on('will-prevent-unload', (event) => event.preventDefault());
 
   avdWindows.add(win);
@@ -146,7 +165,10 @@ async function createMainWindow() {
     callback({ responseHeaders: stripCspReportOnly(details.responseHeaders) });
   });
 
-  const aboutBlankHandler = createAboutBlankInterceptor(url => shell.openExternal(url));
+  const aboutBlankHandler = createAboutBlankInterceptor(
+    url => shell.openExternal(url),
+    details => authPopupIds.has(details.webContentsId),
+  );
   appSession.webRequest.onBeforeRequest(aboutBlankHandler);
 
   const savedState = windowState.load(config.window);
@@ -168,6 +190,7 @@ async function createMainWindow() {
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url, features, disposition }) => {
+    if (isBlankAuthPopup(url, features, disposition)) return authPopupResult(mainWindow);
     if (!url || url === 'about:blank' || url === 'about:blank#blocked') {
       return { action: 'deny' };
     }
@@ -176,25 +199,13 @@ async function createMainWindow() {
       return { action: 'deny' };
     }
     if (isAuthUrl(url) || (isSafeExternalUrl(url) && isLikelyAuthPopup(features, disposition))) {
-      return {
-        action: 'allow',
-        overrideBrowserWindowOptions: {
-          modal: true,
-          parent: mainWindow,
-          width: 520,
-          height: 700,
-          webPreferences: {
-            partition: config.sessionPartition,
-            contextIsolation: false,
-            sandbox: false,
-            nodeIntegration: false,
-          },
-        },
-      };
+      return authPopupResult(mainWindow);
     }
     if (isSafeExternalUrl(url)) shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  trackAuthPopup(mainWindow.webContents);
 
   createTray(() => mainWindow, () => [...avdWindows]);
 

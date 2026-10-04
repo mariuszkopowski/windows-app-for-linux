@@ -1,4 +1,4 @@
-const { isAuthUrl, isAvdUrl, isSafeExternalUrl, isLikelyAuthPopup } = require('../../app/mainAppWindow/helpers');
+const { isAuthUrl, isAvdUrl, isSafeExternalUrl, isLikelyAuthPopup, isBlankAuthPopup } = require('../../app/mainAppWindow/helpers');
 
 describe('isAuthUrl', () => {
   it('detects login.microsoftonline.com', () => {
@@ -114,5 +114,27 @@ describe('isLikelyAuthPopup', () => {
   it('handles non-string features without throwing', () => {
     expect(() => isLikelyAuthPopup(null, 'foreground-tab')).not.toThrow();
     expect(isLikelyAuthPopup(null, 'foreground-tab')).toBe(false);
+  });
+});
+
+describe('isBlankAuthPopup', () => {
+  it('allows an about:blank popup (MSAL sign-in pattern)', () => {
+    expect(isBlankAuthPopup('about:blank', 'popup,width=483,height=600', 'new-popup')).toBe(true);
+  });
+
+  it('allows about:blank with only a small window size', () => {
+    expect(isBlankAuthPopup('about:blank', 'width=500,height=600', 'new-window')).toBe(true);
+  });
+
+  it('rejects a plain about:blank tab', () => {
+    expect(isBlankAuthPopup('about:blank', '', 'foreground-tab')).toBe(false);
+  });
+
+  it('rejects non-blank URLs', () => {
+    expect(isBlankAuthPopup('https://example.com', 'popup', 'new-popup')).toBe(false);
+  });
+
+  it('rejects about:blank#blocked', () => {
+    expect(isBlankAuthPopup('about:blank#blocked', 'popup', 'new-popup')).toBe(false);
   });
 });
