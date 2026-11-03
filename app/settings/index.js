@@ -1,4 +1,4 @@
-const { BrowserWindow, ipcMain } = require('electron');
+const { BrowserWindow, ipcMain, nativeImage } = require('electron');
 const path = require('path');
 const { loadConfig, saveConfig } = require('../config');
 const { t } = require('../i18n');
@@ -75,6 +75,7 @@ function createSettingsWindow(parent) {
     width: 480,
     height: 660,
     title: t('settings.title'),
+    icon: nativeImage.createFromPath(path.join(__dirname, '../../assets/icons/512x512.png')),
     parent,
     backgroundColor: '#f5f5f7',
     autoHideMenuBar: true,

@@ -1,8 +1,11 @@
-const { BrowserWindow, session, shell } = require('electron');
+const { BrowserWindow, nativeImage, session, shell } = require('electron');
 const path = require('path');
 const config = require('../config');
 const { createTray, rebuildMenu } = require('../tray');
 const windowState = require('./windowState');
+
+// KDE needs a nativeImage (not a path) to show the icon in the taskbar/window list.
+const windowIcon = () => nativeImage.createFromPath(path.join(__dirname, '../../assets/icons/512x512.png'));
 const {
   isAuthUrl,
   isAvdUrl,
@@ -47,6 +50,7 @@ function createAvdWindow(url) {
     minWidth: config.window.minWidth,
     minHeight: config.window.minHeight,
     title: 'Windows App — Session',
+    icon: windowIcon(),
     backgroundColor: '#000000',
     autoHideMenuBar: true,
     webPreferences: {
@@ -154,6 +158,7 @@ async function createMainWindow() {
   mainWindow = new BrowserWindow({
     ...savedState,
     title: 'Windows App',
+    icon: windowIcon(),
     backgroundColor: '#1a1a2e',
     autoHideMenuBar: true,
     webPreferences: {
