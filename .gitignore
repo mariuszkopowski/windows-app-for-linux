@@ -4,3 +4,4 @@ out/
 *.log
 .DS_Store
 .claude/
+helper/phone-passkey/target/

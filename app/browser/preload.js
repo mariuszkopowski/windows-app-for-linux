@@ -1,6 +1,7 @@
 // Runs in renderer context (contextIsolation: false) before page scripts
 
 const { parseUaVersions } = require('../mainAppWindow/helpers');
+const { installWebauthnShim } = require('./webauthn');
 
 function skipFirstRunExperience() {
   try {
@@ -115,3 +116,4 @@ function spoofUserAgentData() {
 spoofPlatform();
 spoofUserAgentData();
 skipFirstRunExperience();
+installWebauthnShim();

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'self'">
+  <meta name="color-scheme" content="light dark">
+  <style>
+    :root {
+      --bg: #f5f6fa; --card: #ffffff; --text: #1b1b1f; --muted: #5f6370;
+      --border: #e3e5ec; --accent: #0f6cbd; --accent-bg: #e6f0fa;
+      --error: #b3261e; --error-bg: #fbe9e7; --shadow: 0 6px 24px rgba(20, 24, 40, .10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #16161f; --card: #20202c; --text: #f1f1f5; --muted: #a3a6b4;
+        --border: #30303f; --accent: #6cb4f5; --accent-bg: #1c2d40;
+        --error: #ff8a80; --error-bg: #3a1f1f; --shadow: 0 6px 24px rgba(0, 0, 0, .45);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg); color: var(--text);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 28px 20px; user-select: none; overflow: hidden;
+    }
+    body > * { flex: none; }
+    .badge {
+      width: 48px; height: 48px; border-radius: 14px; background: var(--accent-bg); color: var(--accent);
+      display: flex; align-items: center; justify-content: center; margin-bottom: 14px;
+    }
+    h1 { font-size: 20px; font-weight: 650; margin: 0 0 6px; letter-spacing: -.01em; }
+    .subtitle { margin: 0; color: var(--muted); text-align: center; max-width: 300px; }
+    .qr-card {
+      margin: 18px 0 14px; padding: 14px; background: #fff; border-radius: 18px;
+      box-shadow: var(--shadow); border: 1px solid var(--border);
+      width: 250px; height: 250px; display: flex; align-items: center; justify-content: center;
+    }
+    .qr-card img { width: 100%; height: 100%; display: block; }
+    .skeleton {
+      width: 100%; height: 100%; border-radius: 10px;
+      background: linear-gradient(100deg, #eceef3 30%, #f7f8fb 50%, #eceef3 70%) 0 0 / 200% 100%;
+      animation: shimmer 1.4s linear infinite;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .status {
+      display: inline-flex; align-items: center; gap: 9px; max-width: 100%;
+      padding: 8px 14px; border-radius: 999px; font-weight: 550; text-align: left;
+      background: var(--accent-bg); color: var(--accent);
+    }
+    .status.error { background: var(--error-bg); color: var(--error); }
+    .dot {
+      flex: none; width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid currentColor; border-right-color: transparent; animation: spin .9s linear infinite;
+    }
+    .status.error .dot { animation: none; border: 0; background: currentColor; width: 8px; height: 8px; margin: 3px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hint { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; color: var(--muted); font-size: 12.5px; }
+    body > .spacer { flex: 1 1 auto; min-height: 12px; }
+    button {
+      font: inherit; font-weight: 550; color: var(--text); background: transparent;
+      border: 1px solid var(--border); border-radius: 10px; padding: 8px 28px; cursor: pointer;
+    }
+    button:hover { background: var(--card); }
+    button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (prefers-reduced-motion: reduce) { .skeleton, .dot { animation: none; } }
+  </style>
+</head>
+<body>
+  <div class="badge" aria-hidden="true">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3"/><path d="m16 7 3 3"/><path d="m14 9 2 2"/>
+    </svg>
+  </div>
+  <h1 id="title"></h1>
+  <p class="subtitle" id="instructions"></p>
+  <div class="qr-card" id="qr"><div class="skeleton"></div></div>
+  <div class="status" id="status" role="status" aria-live="polite"><span class="dot"></span><span id="status-text"></span></div>
+  <p class="hint">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></svg>
+    <span id="hint"></span>
+  </p>
+  <div class="spacer"></div>
+  <button id="cancel"></button>
+  <script src="qr.js"></script>
+</body>
+</html>
