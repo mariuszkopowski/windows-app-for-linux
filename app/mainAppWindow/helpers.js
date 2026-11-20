@@ -77,6 +77,7 @@ async function clearAvdSessionState(appSession) {
 const ALLOWED_PERMISSIONS = [
   'camera', 'microphone', 'notifications', 'media',
   'display-capture', 'clipboard-read', 'clipboard-sanitized-write',
+  'fullscreen', 'keyboardLock', 'pointerLock',
 ];
 
 function permissionAllowed(permission) {

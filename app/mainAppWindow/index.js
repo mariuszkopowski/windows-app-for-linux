@@ -111,6 +111,13 @@ function createAvdWindow(url) {
 
   trackAuthPopup(win.webContents);
   win.webContents.on('will-prevent-unload', (event) => event.preventDefault());
+  win.webContents.on('enter-html-full-screen', () => {
+    if (!win.isFullScreen()) win.setFullScreen(true);
+  });
+
+    win.webContents.on('leave-html-full-screen', () => {
+      if (win.isFullScreen()) win.setFullScreen(false);
+    });
 
   avdWindows.add(win);
   rebuildMenu();
