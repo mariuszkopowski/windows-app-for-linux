@@ -52,4 +52,17 @@ describe('createAboutBlankInterceptor', () => {
     handler({ url: 'https://example.com/image.png', resourceType: 'image' }, jest.fn());
     expect(handler.getCount()).toBe(0);
   });
+
+  it('lets exempt requests (our auth popups) through untouched', () => {
+    const openExternal = jest.fn();
+    const handler = createAboutBlankInterceptor(openExternal, d => d.webContentsId === 7);
+    const first = jest.fn();
+    const second = jest.fn();
+    handler({ url: 'about:blank', resourceType: 'mainFrame', webContentsId: 7 }, first);
+    handler({ url: 'https://login.microsoftonline.com/x', resourceType: 'mainFrame', webContentsId: 7 }, second);
+    expect(first).toHaveBeenCalledWith({});
+    expect(second).toHaveBeenCalledWith({});
+    expect(openExternal).not.toHaveBeenCalled();
+    expect(handler.getCount()).toBe(0);
+  });
 });
