@@ -1,6 +1,7 @@
 const { Menu, BrowserWindow, app } = require('electron');
 const { t } = require('../i18n');
 const { createSettingsWindow } = require('../settings');
+const { createMediaCheckWindow } = require('../mediaCheck');
 
 function applyMenu() {
   const template = [
@@ -11,6 +12,11 @@ function applyMenu() {
           label: t('menu.settings'),
           accelerator: 'CmdOrCtrl+,',
           click: () => createSettingsWindow(BrowserWindow.getFocusedWindow()),
+        },
+        {
+          label: t('menu.mediaCheck'),
+          accelerator: 'CmdOrCtrl+Shift+M',
+          click: () => createMediaCheckWindow(BrowserWindow.getFocusedWindow()),
         },
         { type: 'separator' },
         {

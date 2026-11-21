@@ -13,6 +13,7 @@ This is not affiliated with or endorsed by Microsoft.
 - Hardware video decode (VAAPI on Intel/AMD) for the RDP graphics stream
 - Wayland and X11 support
 - Settings window for switching cloud environment (Commercial / GCC High / DoD), default window size, and clearing cookies/cache
+- Local camera and microphone preflight with camera preview, live microphone level, and package diagnostics
 - Distributed as AppImage, Flatpak, and Snap
 
 ## Installation
@@ -62,11 +63,14 @@ No in-app URL bar — configuration lives in `~/.config/windows-app-for-linux/co
 
 The Settings window covers `cloudEnvironment`, the connection URL (only editable when the environment is set to Custom), window size, and a "Clear Cookies and Cache" button. Most changes take effect after restarting the app.
 
+Launch only the local device checker with `windows-app-for-linux --media-check`.
+
 ## Keyboard shortcuts
 
 | Shortcut | Action |
 |---|---|
 | `Ctrl+,` | Settings |
+| `Ctrl+Shift+M` | Camera and microphone check |
 | `Ctrl+Q` | Quit |
 | `Ctrl+R` | Reload |
 | `F11` | Fullscreen |
@@ -80,6 +84,12 @@ These are limitations of the Windows App **web client** itself (windows.cloud.mi
 
 - **Webcam redirection is unreliable.** The app grants the `camera` permission automatically, but whether a camera actually shows up inside a remote session depends on Microsoft's web client support, which is still incomplete — it works more reliably in the native (non-web) Windows App. This isn't a bug in this wrapper; there's no code-level fix available on our side.
 - No multi-monitor support, no RDP Shortpath (UDP), no screen-capture protection — all native-client-only features.
+
+Use **tray → Camera & Microphone Check** (or `Ctrl+Shift+M`) before connecting. A passing
+test confirms that the Linux wrapper can capture the selected devices locally; the remote-session
+toolbar and host policy must still enable redirection. For Snap, verify the `camera` and
+`audio-record` interfaces with `snap connections windows-app-for-linux`. For Flatpak, inspect
+`flatpak info --show-permissions io.github.mariuszkopowski.WindowsAppForLinux`.
 
 See [docs/PLAN.md](docs/PLAN.md) for the full comparison against the native client.
 

@@ -1,4 +1,11 @@
-const { permissionAllowed, stripCspReportOnly, clearAvdSessionState, parseUaVersions } = require('../../app/mainAppWindow/helpers');
+const {
+  permissionAllowed,
+  isTrustedMediaOrigin,
+  shouldGrantPermission,
+  stripCspReportOnly,
+  clearAvdSessionState,
+  parseUaVersions,
+} = require('../../app/mainAppWindow/helpers');
 
 describe('permissionAllowed', () => {
   const granted = ['camera', 'microphone', 'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write'];
@@ -14,6 +21,29 @@ describe('permissionAllowed', () => {
     it(`denies ${perm}`, () => {
       expect(permissionAllowed(perm)).toBe(false);
     });
+  });
+});
+
+describe('shouldGrantPermission', () => {
+  it('grants supported permissions only to Windows App origins', () => {
+    expect(shouldGrantPermission('media', 'https://windows.cloud.microsoft/')).toBe(true);
+    expect(shouldGrantPermission('camera', 'https://rdweb.wvd.azure.us/')).toBe(true);
+    expect(shouldGrantPermission('microphone', 'https://rdweb.wvd.microsoft.us/')).toBe(true);
+    expect(shouldGrantPermission('media', 'https://example.com/')).toBe(false);
+  });
+
+  it('limits the internal media check to capture permissions', () => {
+    const internal = { internalMediaCheck: true };
+    expect(shouldGrantPermission('camera', 'file:///media-check.html', internal)).toBe(true);
+    expect(shouldGrantPermission('microphone', 'file:///media-check.html', internal)).toBe(true);
+    expect(shouldGrantPermission('notifications', 'file:///media-check.html', internal)).toBe(false);
+    expect(shouldGrantPermission('camera', 'file:///media-check.html')).toBe(false);
+  });
+
+  it('recognizes only exact HTTPS Windows App hosts', () => {
+    expect(isTrustedMediaOrigin('https://windows.cloud.microsoft/')).toBe(true);
+    expect(isTrustedMediaOrigin('http://windows.cloud.microsoft/')).toBe(false);
+    expect(isTrustedMediaOrigin('https://windows.cloud.microsoft.example.com/')).toBe(false);
   });
 });
 
