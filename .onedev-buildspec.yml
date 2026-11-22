@@ -1,0 +1,335 @@
+version: 53
+# this tracks OneDev's internal buildspec schema revision, not a project
+# version -- matched to the value OneDev's own buildspec carries on 16.6.4,
+# since setting it too low breaks parsing after an OneDev upgrade
+jobs:
+- name: pre-build-test
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: SetupCacheStep
+    name: node modules cache
+    key: node-modules
+    checksumFiles: package-lock.json
+    entries:
+    - path: node_modules
+    uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: test
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      commands: |
+        set -e
+        npm ci
+        npm test
+    condition: SUCCESSFUL
+    optional: false
+  triggers:
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
+
+- name: build-appimage
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: SetupCacheStep
+    name: node modules cache
+    key: node-modules
+    checksumFiles: package-lock.json
+    entries:
+    - path: node_modules
+    uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: build
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      commands: |
+        set -e
+        npm ci
+        npm run build:appimage
+    condition: SUCCESSFUL
+    optional: false
+  - type: PublishArtifactStep
+    name: publish artifacts
+    artifacts: dist/*.AppImage
+    condition: SUCCESSFUL
+    optional: false
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
+
+- name: build-flatpak
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: SetupCacheStep
+    name: node modules cache
+    key: node-modules
+    checksumFiles: package-lock.json
+    entries:
+    - path: node_modules
+    uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: build
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      # Flathub's runtimes are large (~250-600MB each) and not cached between
+      # CI runs (unlike node_modules), so a mid-download CDN hiccup here
+      # ("Transferred a partial file") is a real, recurring failure mode --
+      # carried over from the GitLab pipeline as-is, hence the job-level retry.
+      commands: |
+        set -e
+        apt-get update && apt-get install -y flatpak flatpak-builder
+        flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+        flatpak install -y --user flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 org.electronjs.Electron2.BaseApp//24.08
+        npm ci
+        npm run build:flatpak
+        # stable artifact name so consumers (nobara-reinstall/restore.sh) don't depend on the version
+        mv dist/*.flatpak dist/WindowsAppForLinux.flatpak
+    condition: SUCCESSFUL
+    optional: false
+  - type: PublishArtifactStep
+    name: publish artifacts
+    artifacts: dist/*.flatpak
+    condition: SUCCESSFUL
+    optional: false
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 2
+  retryDelay: 30
+  timeout: 3600
+
+- name: build-snap
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: SetupCacheStep
+    name: node modules cache
+    key: node-modules
+    checksumFiles: package-lock.json
+    entries:
+    - path: node_modules
+    uploadStrategy: UPLOAD_IF_NOT_EXACT_MATCH
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: build
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      commands: |
+        set -e
+        apt-get update && apt-get install -y squashfs-tools
+        npm ci
+        npm run build:snap
+    condition: SUCCESSFUL
+    optional: false
+  - type: PublishArtifactStep
+    name: publish artifacts
+    artifacts: dist/*.snap
+    condition: SUCCESSFUL
+    optional: false
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
+
+- name: verify-appimage
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: verify
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      # No FUSE inside a plain container, so --appimage-extract-and-run
+      # self-extracts instead. Don't invoke AppRun by hand -- its APPDIR
+      # auto-detection breaks on CLI flags that aren't real filenames.
+      commands: |
+        set -e
+        apt-get update && apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libasound2 libcups2
+        chmod +x dist/*.AppImage
+        xvfb-run -a dist/*.AppImage --appimage-extract-and-run --smoke-test --no-sandbox
+    condition: SUCCESSFUL
+    optional: false
+  jobDependencies:
+  - jobName: build-appimage
+    requireSuccessful: true
+    artifacts: dist/*.AppImage
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600
+
+- name: verify-flatpak
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: verify
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      # zypak (the Chromium sandbox shim Electron apps use inside Flatpak)
+      # refuses to run as root, unlike plain Chromium -- run as an
+      # unprivileged user, the way Flatpak apps are actually meant to run.
+      # A local .flatpak install also needs a live D-Bus session, not just
+      # running the app.
+      commands: |
+        set -e
+        apt-get update && apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libasound2 libcups2 flatpak dbus-x11
+        useradd -m ciuser
+        chown -R ciuser:ciuser dist
+        runuser -u ciuser -- dbus-run-session -- bash -c 'set -e; flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo; flatpak install -y --user dist/*.flatpak; xvfb-run -a flatpak run io.github.mariuszkopowski.WindowsAppForLinux -- --smoke-test'
+    condition: SUCCESSFUL
+    optional: false
+  jobDependencies:
+  - jobName: build-flatpak
+    requireSuccessful: true
+    artifacts: dist/*.flatpak
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 2
+  retryDelay: 30
+  timeout: 3600
+
+- name: verify-snap
+  steps:
+  - type: CheckoutStep
+    name: checkout
+    cloneCredential:
+      type: DefaultCredential
+    withLfs: false
+    withSubmodules: false
+    condition: SUCCESSFUL
+    optional: false
+  - type: CommandStep
+    name: verify
+    runInContainer: true
+    runAs: "0:0"
+    image: node:20
+    interpreter:
+      type: PosixInterpreter
+      shell: bash
+      # No systemd inside a plain container, so a confined snap install
+      # isn't possible -- unpack the squashfs payload and run the bundled
+      # binary directly. Still proves the packaged binary boots.
+      commands: |
+        set -e
+        apt-get update && apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libasound2 libcups2 squashfs-tools
+        unsquashfs -d snap-root dist/*.snap
+        cmd=$(awk '/^apps:/{f=1} f && /command:/{print $2; exit}' snap-root/meta/snap.yaml)
+        xvfb-run -a "snap-root/$cmd" --smoke-test --no-sandbox
+    condition: SUCCESSFUL
+    optional: false
+  jobDependencies:
+  - jobName: build-snap
+    requireSuccessful: true
+    artifacts: dist/*.snap
+  triggers:
+  - type: TagCreateTrigger
+    tags: v*
+  - type: BranchUpdateTrigger
+    userMatch: anyone
+    branches: main
+  retryCondition: never
+  maxRetries: 3
+  retryDelay: 30
+  timeout: 3600

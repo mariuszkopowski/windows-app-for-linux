@@ -1,7 +1,7 @@
 {
   "name": "windows-app-for-linux",
   "desktopName": "io.github.mariuszkopowski.WindowsAppForLinux.desktop",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "description": "Windows App (windows.cloud.microsoft) wrapper for Linux",
   "main": "app/index.js",
   "scripts": {

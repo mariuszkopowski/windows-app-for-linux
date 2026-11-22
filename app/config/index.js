@@ -10,7 +10,18 @@ const DEFAULT_CONFIG_PATH = path.join(
   'config.json'
 );
 
-function loadConfig({ configPath = DEFAULT_CONFIG_PATH, argv = process.argv } = {}) {
+// hideBin() always drops 2 leading entries, assuming argv = [execPath, appPath, ...args] —
+// true for `electron .` (unpackaged: Electron sets process.defaultApp=true and keeps the
+// appPath entry) but NOT for a packaged binary (AppImage/Flatpak/Snap), where argv is only
+// [execPath, ...args]. Pad it so a real CLI flag like --smoke-test isn't eaten as if it were
+// the appPath. Only applies to the real process.argv default — explicit argv (tests) is
+// already yargs.hideBin-shaped and passed through untouched.
+function defaultArgv() {
+  const isPackagedElectron = process.versions?.electron && typeof process.defaultApp === 'undefined';
+  return isPackagedElectron ? [process.argv[0], '', ...process.argv.slice(1)] : process.argv;
+}
+
+function loadConfig({ configPath = DEFAULT_CONFIG_PATH, argv = defaultArgv() } = {}) {
   const fileConfig = (() => {
     try { return JSON.parse(fs.readFileSync(configPath, 'utf8')); }
     catch { return {}; }
@@ -20,6 +31,7 @@ function loadConfig({ configPath = DEFAULT_CONFIG_PATH, argv = process.argv } = 
     .option('url', { type: 'string' })
     .option('user-agent', { type: 'string' })
     .option('cloud-environment', { type: 'string', choices: Object.keys(defaults.cloudEnvironments) })
+    .option('smoke-test', { type: 'boolean', default: false })
     .parseSync();
 
   const cloudEnvironment = args['cloud-environment'] || fileConfig.cloudEnvironment;
@@ -31,6 +43,8 @@ function loadConfig({ configPath = DEFAULT_CONFIG_PATH, argv = process.argv } = 
     ...fileConfig,
     ...(args.url && { url: args.url }),
     ...(args['user-agent'] && { userAgent: args['user-agent'] }),
+    // CLI-only — not persisted to/read from config.json, always reflects this run's flag.
+    smokeTest: Boolean(args['smoke-test']),
     window: {
       ...defaults.window,
       ...(fileConfig.window || {}),

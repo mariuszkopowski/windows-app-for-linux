@@ -14,10 +14,18 @@ function isAuthUrl(url) {
   }
 }
 
+// Matches /webclient/<resourceType>/<resourceId...> — the portal uses different
+// resource-type segments for different session kinds observed in the wild:
+// "avd" for classic Azure Virtual Desktop host-pool sessions, "ent" for
+// Windows 365 Enterprise Cloud PCs. Only the exact host is trusted, but the
+// resource-type segment itself is not enumerated (Microsoft doesn't publish
+// the full list) — any single segment there is accepted so a session kind we
+// haven't seen yet still opens in-app instead of falling through to the
+// system browser.
 function isAvdUrl(url) {
   try {
     const { hostname, pathname } = new URL(url);
-    return hostname === 'windows.cloud.microsoft' && pathname.startsWith('/webclient/avd/');
+    return hostname === 'windows.cloud.microsoft' && /^\/webclient\/[^/]+\/.+/.test(pathname);
   } catch {
     return false;
   }
@@ -44,13 +52,29 @@ function isLikelyAuthPopup(features, disposition) {
   return Boolean(width && height && width < 800 && height < 800);
 }
 
-// MSAL-style sign-in (e.g. the consent prompt when granting an AVD
-// permission) calls window.open('about:blank', name, 'popup,...') and navigates
-// that window to the IdP afterwards. Denying it hands the page `null`, so the
-// sign-in window never shows up. A plain about:blank without popup hints is
-// still denied (see createAboutBlankInterceptor).
-function isBlankAuthPopup(url, features, disposition) {
-  return url === 'about:blank' && isLikelyAuthPopup(features, disposition);
+// Single source of truth for what a window.open()/target=_blank request should
+// become. Used by both the main window and every AVD session window — they
+// used to each inline a slightly-drifted copy of this logic, which is how the
+// isAuthUrl() check went missing from the AVD window's handler.
+//
+// Returns one of: 'avd' | 'authPopup' | 'external' | 'deny'.
+function classifyWindowOpen(url, features, disposition) {
+  if (isAvdUrl(url)) return 'avd';
+
+  const isBlank = !url || url === 'about:blank' || url === 'about:blank#blocked';
+  if (isBlank) {
+    // Auth libraries (MSAL's popup flow, used as a fallback for per-resource
+    // consent prompts like Cloud PC "grant permission") open a blank popup
+    // synchronously to preserve the click's user gesture, then navigate it
+    // once the real sign-in URL is known — there's no URL to classify yet,
+    // so this has to go on the window-shape heuristic alone.
+    return isLikelyAuthPopup(features, disposition) ? 'authPopup' : 'deny';
+  }
+  if (isAuthUrl(url) || (isSafeExternalUrl(url) && isLikelyAuthPopup(features, disposition))) {
+    return 'authPopup';
+  }
+  if (isSafeExternalUrl(url)) return 'external';
+  return 'deny';
 }
 
 // Derives the Edge/Chromium major version from the configured User-Agent
@@ -128,7 +152,7 @@ module.exports = {
   isAvdUrl,
   isSafeExternalUrl,
   isLikelyAuthPopup,
-  isBlankAuthPopup,
+  classifyWindowOpen,
   parseUaVersions,
   clearAvdSessionState,
   permissionAllowed,

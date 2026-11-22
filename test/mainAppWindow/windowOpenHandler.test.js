@@ -1,4 +1,4 @@
-const { isAuthUrl, isAvdUrl, isSafeExternalUrl, isLikelyAuthPopup, isBlankAuthPopup } = require('../../app/mainAppWindow/helpers');
+const { isAuthUrl, isAvdUrl, isSafeExternalUrl, isLikelyAuthPopup, classifyWindowOpen } = require('../../app/mainAppWindow/helpers');
 
 describe('isAuthUrl', () => {
   it('detects login.microsoftonline.com', () => {
@@ -43,6 +43,14 @@ describe('isAuthUrl', () => {
 describe('isAvdUrl', () => {
   it('detects AVD session URLs', () => {
     expect(isAvdUrl('https://windows.cloud.microsoft/webclient/avd/abc-123-guid')).toBe(true);
+  });
+
+  it('detects Windows 365 Enterprise Cloud PC session URLs (webclient/ent)', () => {
+    expect(isAvdUrl('https://windows.cloud.microsoft/webclient/ent/cbaaf69f-d75b-4701-ba7d-845498bd4464?endpointId=4c628cbd#loginHint=x')).toBe(true);
+  });
+
+  it('detects multi-segment AVD session URLs (workspace/resource)', () => {
+    expect(isAvdUrl('https://windows.cloud.microsoft/webclient/avd/e520c9c7-32dc-470a-9382-c9e3291d96d3/14bfb9d4-285a-456b-1269-08d8d62b1f28')).toBe(true);
   });
 
   it('does not match portal URL', () => {
@@ -117,24 +125,47 @@ describe('isLikelyAuthPopup', () => {
   });
 });
 
-describe('isBlankAuthPopup', () => {
-  it('allows an about:blank popup (MSAL sign-in pattern)', () => {
-    expect(isBlankAuthPopup('about:blank', 'popup,width=483,height=600', 'new-popup')).toBe(true);
+describe('classifyWindowOpen', () => {
+  it('routes AVD session URLs to avd', () => {
+    expect(classifyWindowOpen('https://windows.cloud.microsoft/webclient/avd/abc-123', undefined, 'foreground-tab')).toBe('avd');
   });
 
-  it('allows about:blank with only a small window size', () => {
-    expect(isBlankAuthPopup('about:blank', 'width=500,height=600', 'new-window')).toBe(true);
+  it('routes a blank popup with auth-popup-shaped features to authPopup (MSAL two-phase popup)', () => {
+    // MSAL's AcquireTokenPopup flow opens window.open('about:blank', 'msal', 'width=483,height=600,...')
+    // synchronously to preserve the click gesture, then navigates it once the real sign-in URL is known.
+    expect(classifyWindowOpen('about:blank', 'width=483,height=600', 'foreground-tab')).toBe('authPopup');
   });
 
-  it('rejects a plain about:blank tab', () => {
-    expect(isBlankAuthPopup('about:blank', '', 'foreground-tab')).toBe(false);
+  it('routes an empty-string popup URL the same as about:blank', () => {
+    expect(classifyWindowOpen('', 'width=483,height=600', 'foreground-tab')).toBe('authPopup');
   });
 
-  it('rejects non-blank URLs', () => {
-    expect(isBlankAuthPopup('https://example.com', 'popup', 'new-popup')).toBe(false);
+  it('routes about:blank#blocked with popup-shaped features to authPopup', () => {
+    expect(classifyWindowOpen('about:blank#blocked', undefined, 'new-popup')).toBe('authPopup');
   });
 
-  it('rejects about:blank#blocked', () => {
-    expect(isBlankAuthPopup('about:blank#blocked', 'popup', 'new-popup')).toBe(false);
+  it('denies a blank popup with no popup signal (not an auth flow)', () => {
+    expect(classifyWindowOpen('about:blank', undefined, 'foreground-tab')).toBe('deny');
+  });
+
+  it('routes known auth domains to authPopup regardless of window shape', () => {
+    expect(classifyWindowOpen('https://login.microsoftonline.com/common/oauth2/v2.0/authorize', undefined, 'foreground-tab')).toBe('authPopup');
+  });
+
+  it('routes a small popup-shaped external URL to authPopup (federated IdP)', () => {
+    expect(classifyWindowOpen('https://idp.example.com/login', 'width=500,height=700', 'foreground-tab')).toBe('authPopup');
+  });
+
+  it('routes an ordinary https link to external', () => {
+    expect(classifyWindowOpen('https://example.com', undefined, 'foreground-tab')).toBe('external');
+  });
+
+  it('denies unsafe protocols', () => {
+    expect(classifyWindowOpen('file:///etc/passwd', undefined, 'foreground-tab')).toBe('deny');
+  });
+
+  it('denies malformed URLs without throwing', () => {
+    expect(() => classifyWindowOpen('not-a-url', undefined, 'foreground-tab')).not.toThrow();
+    expect(classifyWindowOpen('not-a-url', undefined, 'foreground-tab')).toBe('deny');
   });
 });

@@ -43,12 +43,24 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 app.whenReady().then(async () => {
+  const config = require('./config');
   const { load } = require('./i18n');
   const { applyMenu } = require('./menus/appMenu');
   const { createMainWindow } = require('./mainAppWindow');
   load();
   applyMenu();
   await createMainWindow();
+
+  // Packaging smoke test (`--smoke-test`, used in CI after install): proves
+  // the package installs and Electron boots — window, session, preload,
+  // tray/menu/i18n all initialize without crashing — without depending on
+  // network access or reaching the real windows.cloud.microsoft portal.
+  if (config.smokeTest) {
+    app.exit(0);
+  }
+}).catch(err => {
+  console.error('Startup failed:', err);
+  app.exit(1);
 });
 
 app.on('second-instance', () => {
