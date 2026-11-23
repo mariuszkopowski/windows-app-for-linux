@@ -173,3 +173,33 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Uploads the verified snap to the Snap Store (edge channel; promote to
+  # stable by hand in the Store dashboard once it has been tried). Needs the
+  # repo secret SNAPCRAFT_STORE_CREDENTIALS (`snapcraft export-login`); without
+  # it the steps are skipped, so forks and unconfigured repos are unaffected.
+  publish-snap:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [verify-appimage, verify-flatpak, verify-snap]
+    runs-on: ubuntu-latest
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+    steps:
+      - name: Download build artifacts
+        if: env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+
+      - name: Locate snap
+        id: snap
+        if: env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        run: echo "path=$(ls "$GITHUB_WORKSPACE"/dist/*.snap)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish snap to the Snap Store (edge)
+        if: env.SNAPCRAFT_STORE_CREDENTIALS != ''
+        uses: snapcore/action-publish@v1
+        with:
+          snap: ${{ steps.snap.outputs.path }}
+          release: edge

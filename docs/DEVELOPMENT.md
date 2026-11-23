@@ -131,6 +131,10 @@ flag isn't a real filename (e.g. `--smoke-test`), it walks all the way to
 1. Bump `version` in `package.json`.
 2. `npm test` and a local `npm run build:appimage` smoke test.
 3. Tag `vX.Y.Z` and push the tag — CI builds and attaches AppImage/Flatpak/Snap.
+   If the repo secret `SNAPCRAFT_STORE_CREDENTIALS` is set (`snapcraft export-login
+   --snaps windows-app-for-linux --acls package_access,package_push,package_release
+   creds.txt`), the `publish-snap` job also uploads the verified snap to the Snap
+   Store `edge` channel; promote it to `stable` in the Store dashboard by hand.
 4. Flathub (`io.github.mariuszkopowski.WindowsAppForLinux`) has its own
    manifest repo — update it separately after a GitHub release exists.
 
