@@ -73,12 +73,21 @@ Stages, in order:
    on pull requests targeting `main` (PRs based on another branch get no CI;
    use `workflow_dispatch` on the branch instead).
 2. **`build`** — a single combined job building AppImage + Flatpak + Snap,
-   uploading them as the `build-output` artifact. Release assets are attached
-   on `v*` tag builds only.
-
-There is currently no post-install `verify` stage; installing each package and
-launching it headless with `--smoke-test` (see below) is a known gap that used
-to be covered only by the removed OneDev pipeline.
+   uploading them as the `build-output` artifact.
+3. **`verify-appimage` / `verify-flatpak` / `verify-snap`** — three parallel
+   jobs, each downloading `build-output`, installing/unpacking one package and
+   booting it headless (`xvfb-run`) with `--smoke-test` (see below), so a package
+   that builds but does not start fails CI.
+   - AppImage: `--appimage-extract-and-run --smoke-test --no-sandbox` (no FUSE
+     on the runner; user namespaces are restricted for the Chromium sandbox).
+   - Flatpak: `flatpak install --user` then `flatpak run <id> --smoke-test`
+     inside `dbus-run-session`. Do not put `--` before `--smoke-test`: flatpak
+     forwards it literally and the app then treats the flag as a positional.
+   - Snap: unpack with `unsquashfs` and run the bundled `windows-app-for-linux`
+     binary directly. The snap's `command.sh` launcher needs snapd's `$SNAP`
+     environment, so it cannot be used outside snapd.
+4. **`release`** — only on `v*` tags and only after all three `verify` jobs
+   pass; attaches the AppImage, Flatpak and Snap to the GitHub release.
 
 ### `--smoke-test`
 
