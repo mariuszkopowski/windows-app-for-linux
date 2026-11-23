@@ -74,6 +74,15 @@ parts:
       craftctl set version="$(sed -n 's/^  "version": "\(.*\)",$/\1/p' package.json | head -1)"
     override-build: |
       set -eu
+      # The node build-snap is not always on PATH; be explicit and fail with
+      # a readable message instead of "npm: command not found".
+      export PATH="/snap/bin:/snap/node/current/bin:$PATH"
+      if ! command -v npm >/dev/null; then
+        echo "npm not found. PATH=$PATH" >&2
+        ls -la /snap /snap/bin /snap/node 2>&1 >&2 || true
+        exit 1
+      fi
+      node --version
       npm ci
       # Unpacked Electron app (no AppImage/flatpak/snap targets).
       npx electron-builder --linux dir --publish never
