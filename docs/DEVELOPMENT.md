@@ -62,30 +62,23 @@ Artifacts land in `dist/` (gitignored).
 
 ## CI
 
-Two mirrored pipelines, same shape:
-
-- `.github/workflows/build.yml` — GitHub Actions. GitHub is the public repo of
-  record because Flathub and the Snap Store publish from it.
-- `.onedev-buildspec.yml` — OneDev (self-hosted, `git.koprowski.cc`), where the
-  separate per-format build and verify jobs run. Its `version` field tracks
-  OneDev's internal buildspec schema revision, not the project version.
+One pipeline: `.github/workflows/build.yml` (GitHub Actions). GitHub is the
+repo of record because Flathub and the Snap Store publish from it. The former
+OneDev mirror was removed on 2026-11-23; there is no Gitea, GitLab or OneDev
+pipeline.
 
 Stages, in order:
 
-1. **`pre-build-test`** — `npm test`. Runs on every push, on any branch.
-2. **`build-packages`** — one job per format (`build-appimage`, `build-flatpak`,
-   `build-snap` on OneDev; a single combined job on GitHub). Gated to only
-   `main` and version tags `v*` — feature branches only get the test stage,
-   by design, so the slower Flatpak/Snap builds don't run on every push.
-3. **`verify`** — one job per format (`verify-appimage`, `verify-flatpak`,
-   `verify-snap`), running in parallel, each installing/extracting its
-   package and launching it headless (`xvfb-run`) with `--smoke-test`
-   (see below) to confirm it actually boots post-install, not just that the
-   build succeeded. Same `main`/tag gating as the build stage.
+1. **`test`** — `npm test`. Runs on every push to `main`/`rewrite`, tags `v*`, and
+   on pull requests targeting `main` (PRs based on another branch get no CI;
+   use `workflow_dispatch` on the branch instead).
+2. **`build`** — a single combined job building AppImage + Flatpak + Snap,
+   uploading them as the `build-output` artifact. Release assets are attached
+   on `v*` tag builds only.
 
-Release artifacts are attached on tag builds, after `verify` passes. Keep
-build/test/verify steps in sync across both pipelines when changing them.
-There is no Gitea or GitLab pipeline.
+There is currently no post-install `verify` stage; installing each package and
+launching it headless with `--smoke-test` (see below) is a known gap that used
+to be covered only by the removed OneDev pipeline.
 
 ### `--smoke-test`
 

@@ -4,20 +4,19 @@
 
 | Remote | URL | Role |
 |---|---|---|
-| `origin` | `https://github.com/mariuszkopowski/windows-app-for-linux.git` | Public repo of record (Flathub/Snap publish from it); CI in `.github/workflows/build.yml` |
-| `onedev` | `http://git.koprowski.cc/windows-app-for-linux` | Self-hosted OneDev (QNAP NAS); CI in `.onedev-buildspec.yml` |
+| `origin` | `https://github.com/mariuszkopowski/windows-app-for-linux.git` | Only remote and repo of record (Flathub/Snap publish from it); CI in `.github/workflows/build.yml` |
 
 - GitHub account: **mariuszkopowski** (App ID `io.github.mariuszkopowski.WindowsAppForLinux`).
-- The old Gitea instance and its `.gitea/` workflow are gone; there is no GitLab pipeline.
+- The self-hosted OneDev mirror was deleted on 2026-11-23 (a bare mirror of its 61 commits is kept locally outside the repo). The old Gitea instance is gone too; there is no GitLab pipeline.
 
 ## Branch history
 
-- The two remotes had drifted into unrelated histories: OneDev carried a snapshot from 2026-07 plus its own refactor (`classifyWindowOpen`, `--smoke-test`, docs) and CI, while GitHub gained Electron 43, community fixes (fullscreen, window icon, blank auth popups) and `navigationHistory`.
-- 2026-11-23: both sides were merged into one tree on top of GitHub `main` (branch `consolidate`). `onedev/main` still has the old unrelated history until it is replaced or reset to match.
+- The GitHub and former OneDev lines had drifted into unrelated histories; on 2026-11-23 they were merged into one tree on `main` (PR #20).
+- The same day: NVIDIA + Wayland blank-window fix (re-exec with `--ozone-platform=x11` plus `--disable-gpu-compositing`), Flatpak runtime 24.08 -> 25.08, Electron 45.4.1, yargs replaced by `util.parseArgs` (PRs #21–#23).
 
 ## Functional state
 
-- Jest: 98 tests / 6 suites, all green.
+- Jest: 102 tests / 6 suites, all green.
 - Done: UA spoof, per-session AVD windows (incl. Windows 365 `webclient/ent/` URLs), tray, Settings, window state, crash recovery, about:blank SSO interceptor with auth-popup exemption, fullscreen handling, window icon, i18n pl/en, `--smoke-test`.
 
 ## Unpublished decisions / context
