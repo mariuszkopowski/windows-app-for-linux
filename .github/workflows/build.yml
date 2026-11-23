@@ -15,59 +15,59 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Checkout
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Set up Node.js
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/setup-node@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    node-version: 22
+ A local .flatpak install needs a live D-Bus session; the runtimes    cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install dependencies
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: npm ci
 
-      - name: Run tests
-        run: npm test
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Run tests
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: npm test
 
   build:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Checkout
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Set up Node.js
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/setup-node@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    node-version: 22
+ A local .flatpak install needs a live D-Bus session; the runtimes    cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install dependencies
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: npm ci
 
-      - name: Install flatpak + snap build tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder squashfs-tools
-          flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
-          flatpak install -y --user flathub \
-            org.freedesktop.Platform//25.08 \
-            org.freedesktop.Sdk//25.08 \
-            org.electronjs.Electron2.BaseApp//25.08
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install flatpak + snap build tools
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get update
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y flatpak flatpak-builder squashfs-tools
+ A local .flatpak install needs a live D-Bus session; the runtimes    flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+ A local .flatpak install needs a live D-Bus session; the runtimes    flatpak install -y --user flathub \
+ A local .flatpak install needs a live D-Bus session; the runtimes      org.freedesktop.Platform//25.08 \
+ A local .flatpak install needs a live D-Bus session; the runtimes      org.freedesktop.Sdk//25.08 \
+ A local .flatpak install needs a live D-Bus session; the runtimes      org.electronjs.Electron2.BaseApp//25.08
 
-      - name: Build AppImage + Flatpak + Snap
-        run: npm run build
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Build AppImage + Flatpak + Snap
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: npm run build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-output
-          path: |
-            dist/*.AppImage
-            dist/*.flatpak
-            dist/*.snap
-          if-no-files-found: error
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Upload build artifacts
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/upload-artifact@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    name: build-output
+ A local .flatpak install needs a live D-Bus session; the runtimes    path: |
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.AppImage
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.flatpak
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.snap
+ A local .flatpak install needs a live D-Bus session; the runtimes    if-no-files-found: error
 
   # Post-install smoke tests: install/extract each package and boot it headless
   # with --smoke-test (window, session, preload, tray/menu/i18n initialise, then
@@ -77,98 +77,98 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: dist
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Download build artifacts
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/download-artifact@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    name: build-output
+ A local .flatpak install needs a live D-Bus session; the runtimes    path: dist
 
-      - name: Install runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2
-          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install runtime libraries
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get update
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
-      # No FUSE on the runner, so --appimage-extract-and-run self-extracts.
-      # Don't invoke AppRun by hand: its APPDIR auto-detection breaks on CLI
-      # flags that aren't real filenames. --no-sandbox because Ubuntu 24.04
-      # runners restrict unprivileged user namespaces for the Chromium sandbox.
-      - name: Smoke test AppImage
-        run: |
-          chmod +x dist/*.AppImage
-          timeout 180 xvfb-run -a dist/*.AppImage --appimage-extract-and-run --smoke-test --no-sandbox
+ A local .flatpak install needs a live D-Bus session; the runtimes# No FUSE on the runner, so --appimage-extract-and-run self-extracts.
+ A local .flatpak install needs a live D-Bus session; the runtimes# Don't invoke AppRun by hand: its APPDIR auto-detection breaks on CLI
+ A local .flatpak install needs a live D-Bus session; the runtimes# flags that aren't real filenames. --no-sandbox because Ubuntu 24.04
+ A local .flatpak install needs a live D-Bus session; the runtimes# runners restrict unprivileged user namespaces for the Chromium sandbox.
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Smoke test AppImage
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    chmod +x dist/*.AppImage
+ A local .flatpak install needs a live D-Bus session; the runtimes    timeout 180 xvfb-run -a dist/*.AppImage --appimage-extract-and-run --smoke-test --no-sandbox
 
   verify-flatpak:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: dist
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Download build artifacts
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/download-artifact@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    name: build-output
+ A local .flatpak install needs a live D-Bus session; the runtimes    path: dist
 
-      - name: Install flatpak and xvfb
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y flatpak xvfb dbus-x11
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install flatpak and xvfb
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get update
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y flatpak xvfb dbus-x11
 
-      # A local .flatpak install needs a live D-Bus session; the runtimes
-      # (25.08) are pulled from Flathub on install.
-      - name: Install and smoke test Flatpak
-        run: |
-          dbus-run-session -- bash -c '
-            set -e
-            flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
-            flatpak install -y --user dist/*.flatpak
-            timeout 180 xvfb-run -a flatpak run io.github.mariuszkopowski.WindowsAppForLinux -- --smoke-test
-          '
+ A local .flatpak install needs a live D-Bus session; the runtimes# A local .flatpak install needs a live D-Bus session; the runtimes
+ A local .flatpak install needs a live D-Bus session; the runtimes# (25.08) are pulled from Flathub on install.
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install and smoke test Flatpak
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    dbus-run-session -- bash -c '
+ A local .flatpak install needs a live D-Bus session; the runtimes      set -e
+ A local .flatpak install needs a live D-Bus session; the runtimes      flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+ A local .flatpak install needs a live D-Bus session; the runtimes      flatpak install -y --user dist/*.flatpak
+ A local .flatpak install needs a live D-Bus session; the runtimes      timeout 180 xvfb-run -a flatpak run io.github.mariuszkopowski.WindowsAppForLinux --smoke-test
+ A local .flatpak install needs a live D-Bus session; the runtimes    '
 
   verify-snap:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: dist
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Download build artifacts
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/download-artifact@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    name: build-output
+ A local .flatpak install needs a live D-Bus session; the runtimes    path: dist
 
-      - name: Install runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2 squashfs-tools
-          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Install runtime libraries
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get update
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2 squashfs-tools
+ A local .flatpak install needs a live D-Bus session; the runtimes    sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
-      # A confined install needs snapd/systemd, and the snap's command.sh
-      # launcher relies on snapd's $SNAP environment, so unpack the squashfs
-      # payload and run the bundled Electron binary directly (--no-sandbox: the
-      # launcher passes it too, and runners restrict user namespaces).
-      - name: Smoke test Snap
-        run: |
-          unsquashfs -d snap-root dist/*.snap
-          timeout 180 xvfb-run -a snap-root/windows-app-for-linux --smoke-test --no-sandbox
+ A local .flatpak install needs a live D-Bus session; the runtimes# A confined install needs snapd/systemd, and the snap's command.sh
+ A local .flatpak install needs a live D-Bus session; the runtimes# launcher relies on snapd's $SNAP environment, so unpack the squashfs
+ A local .flatpak install needs a live D-Bus session; the runtimes# payload and run the bundled Electron binary directly (--no-sandbox: the
+ A local .flatpak install needs a live D-Bus session; the runtimes# launcher passes it too, and runners restrict user namespaces).
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Smoke test Snap
+ A local .flatpak install needs a live D-Bus session; the runtimes  run: |
+ A local .flatpak install needs a live D-Bus session; the runtimes    unsquashfs -d snap-root dist/*.snap
+ A local .flatpak install needs a live D-Bus session; the runtimes    timeout 180 xvfb-run -a snap-root/windows-app-for-linux --smoke-test --no-sandbox
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [verify-appimage, verify-flatpak, verify-snap]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: build-output
-          path: dist
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Download build artifacts
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: actions/download-artifact@v4
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    name: build-output
+ A local .flatpak install needs a live D-Bus session; the runtimes    path: dist
 
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/*.AppImage
-            dist/*.flatpak
-            dist/*.snap
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+ A local .flatpak install needs a live D-Bus session; the runtimes- name: Publish GitHub release
+ A local .flatpak install needs a live D-Bus session; the runtimes  uses: softprops/action-gh-release@v2
+ A local .flatpak install needs a live D-Bus session; the runtimes  with:
+ A local .flatpak install needs a live D-Bus session; the runtimes    files: |
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.AppImage
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.flatpak
+ A local .flatpak install needs a live D-Bus session; the runtimes      dist/*.snap
+ A local .flatpak install needs a live D-Bus session; the runtimes    generate_release_notes: true
+ A local .flatpak install needs a live D-Bus session; the runtimes  env:
+ A local .flatpak install needs a live D-Bus session; the runtimes    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
