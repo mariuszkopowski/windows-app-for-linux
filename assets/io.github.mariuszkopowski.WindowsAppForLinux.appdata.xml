@@ -24,6 +24,10 @@
     </ul>
   </description>
 
+  <developer id="io.github.mariuszkopowski">
+    <name>mariuszkopowski</name>
+  </developer>
+
   <url type="homepage">https://github.com/mariuszkopowski/windows-app-for-linux</url>
   <url type="bugtracker">https://github.com/mariuszkopowski/windows-app-for-linux/issues</url>
 
@@ -32,11 +36,20 @@
   <screenshots>
     <screenshot type="default">
       <caption>Windows App portal showing available cloud PCs</caption>
-      <image>https://raw.githubusercontent.com/mariuszkopowski/windows-app-for-linux/main/docs/screenshot.png</image>
+      <image>https://raw.githubusercontent.com/mariuszkopowski/windows-app-for-linux/main/docs/screenshot.jpg</image>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="0.1.7" date="2026-11-23">
+      <description>
+        <ul>
+          <li>Fix: no window on NVIDIA GPUs under Wayland</li>
+          <li>Fix: Flatpak did not start on X11 sessions</li>
+          <li>Update to Electron 45 and the 25.08 Flatpak runtime</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-06-03">
       <description>
         <p>Initial release.</p>
