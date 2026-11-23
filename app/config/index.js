@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
+const { parseArgs } = require('util');
 const defaults = require('./options');
 
 const DEFAULT_CONFIG_PATH = path.join(
@@ -10,12 +9,14 @@ const DEFAULT_CONFIG_PATH = path.join(
   'config.json'
 );
 
-// hideBin() always drops 2 leading entries, assuming argv = [execPath, appPath, ...args] —
+// The CLI is parsed with node's built-in util.parseArgs (no dependency; yargs >= 18 is
+// ESM-only, which breaks require() under Jest/older Node). Like hideBin(), we drop the 2
+// leading entries, assuming argv = [execPath, appPath, ...args] —
 // true for `electron .` (unpackaged: Electron sets process.defaultApp=true and keeps the
 // appPath entry) but NOT for a packaged binary (AppImage/Flatpak/Snap), where argv is only
 // [execPath, ...args]. Pad it so a real CLI flag like --smoke-test isn't eaten as if it were
 // the appPath. Only applies to the real process.argv default — explicit argv (tests) is
-// already yargs.hideBin-shaped and passed through untouched.
+// already [execPath, appPath, ...args]-shaped and passed through untouched.
 function defaultArgv() {
   const isPackagedElectron = process.versions?.electron && typeof process.defaultApp === 'undefined';
   return isPackagedElectron ? [process.argv[0], '', ...process.argv.slice(1)] : process.argv;
@@ -27,12 +28,20 @@ function loadConfig({ configPath = DEFAULT_CONFIG_PATH, argv = defaultArgv() } =
     catch { return {}; }
   })();
 
-  const args = yargs(hideBin(argv))
-    .option('url', { type: 'string' })
-    .option('user-agent', { type: 'string' })
-    .option('cloud-environment', { type: 'string', choices: Object.keys(defaults.cloudEnvironments) })
-    .option('smoke-test', { type: 'boolean', default: false })
-    .parseSync();
+  // strict:false — Chromium/Electron flags (--ozone-platform, ...) share this argv and must be ignored.
+  const { values: args } = parseArgs({
+    args: argv.slice(2),
+    options: {
+      url: { type: 'string' },
+      'user-agent': { type: 'string' },
+      'cloud-environment': { type: 'string' },
+      'smoke-test': { type: 'boolean', default: false },
+    },
+    strict: false,
+    allowPositionals: true,
+  });
+  // An unknown --cloud-environment preset is ignored rather than aborting startup.
+  if (!Object.hasOwn(defaults.cloudEnvironments, args['cloud-environment'])) delete args['cloud-environment'];
 
   const cloudEnvironment = args['cloud-environment'] || fileConfig.cloudEnvironment;
   const envUrl = cloudEnvironment && defaults.cloudEnvironments[cloudEnvironment];
