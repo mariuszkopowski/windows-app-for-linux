@@ -142,13 +142,14 @@ jobs:
           sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2 squashfs-tools
           sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
 
-      # Confined snap install needs snapd/systemd, so unpack the squashfs
-      # payload and run the bundled binary directly.
+      # A confined install needs snapd/systemd, and the snap's command.sh
+      # launcher relies on snapd's $SNAP environment, so unpack the squashfs
+      # payload and run the bundled Electron binary directly (--no-sandbox: the
+      # launcher passes it too, and runners restrict user namespaces).
       - name: Smoke test Snap
         run: |
           unsquashfs -d snap-root dist/*.snap
-          cmd=$(awk '/^apps:/{f=1} f && /command:/{print $2; exit}' snap-root/meta/snap.yaml)
-          timeout 180 xvfb-run -a "snap-root/$cmd" --smoke-test --no-sandbox
+          timeout 180 xvfb-run -a snap-root/windows-app-for-linux --smoke-test --no-sandbox
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
