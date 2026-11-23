@@ -22,9 +22,9 @@
   "author": "mariuszkopowski",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^43.2.0",
-    "electron-builder": "^26.15.3",
-    "jest": "^30.4.2"
+    "electron": "^43.8.12",
+    "electron-builder": "^26.18.0",
+    "jest": "^30.5.2"
   },
   "dependencies": {
     "yargs": "^17.7.2"
@@ -72,8 +72,8 @@
       ]
     },
     "flatpak": {
-      "runtimeVersion": "24.08",
-      "baseVersion": "24.08",
+      "runtimeVersion": "25.08",
+      "baseVersion": "25.08",
       "branch": "stable",
       "useWaylandFlags": true,
       "finishArgs": [
@@ -91,6 +91,6 @@
     }
   },
   "allowScripts": {
-    "electron@43.2.0": true
+    "electron@43.8.12": true
   }
 }

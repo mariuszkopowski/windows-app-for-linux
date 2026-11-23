@@ -52,9 +52,9 @@ jobs:
           sudo apt-get install -y flatpak flatpak-builder squashfs-tools
           flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
           flatpak install -y --user flathub \
-            org.freedesktop.Platform//24.08 \
-            org.freedesktop.Sdk//24.08 \
-            org.electronjs.Electron2.BaseApp//24.08
+            org.freedesktop.Platform//25.08 \
+            org.freedesktop.Sdk//25.08 \
+            org.electronjs.Electron2.BaseApp//25.08
 
       - name: Build AppImage + Flatpak + Snap
         run: npm run build
