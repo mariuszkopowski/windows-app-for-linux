@@ -30,7 +30,7 @@ function authPopupOptions(parentWin) {
     height: 700,
     webPreferences: {
       partition: config.sessionPartition,
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: false,
       nodeIntegration: false,
     },
@@ -97,7 +97,7 @@ function createAvdWindow(url) {
     webPreferences: {
       partition: config.sessionPartition,
       preload: path.join(__dirname, '../browser/preload.js'),
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: false,
       nodeIntegration: false,
       webSecurity: true,
@@ -190,7 +190,7 @@ async function createMainWindow() {
     webPreferences: {
       partition: config.sessionPartition,
       preload: path.join(__dirname, '../browser/preload.js'),
-      contextIsolation: false,
+      contextIsolation: true,
       sandbox: false,
       nodeIntegration: false,
       webSecurity: true,
