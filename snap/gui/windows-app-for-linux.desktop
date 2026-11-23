@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Windows App for Linux
+Comment=Unofficial client for Windows App (Azure Virtual Desktop, Windows 365)
+Exec=windows-app-for-linux %U
+Icon=${SNAP}/meta/gui/windows-app-for-linux.png
+Terminal=false
+Type=Application
+StartupWMClass=io.github.mariuszkopowski.WindowsAppForLinux
+Categories=Network;Office;

@@ -1,0 +1,83 @@
+name: windows-app-for-linux
+title: Windows App for Linux
+base: core24
+adopt-info: app
+summary: Unofficial client for Windows App - Access Azure Virtual Desktops on Linux
+description: |
+  Windows App for Linux is an unofficial Electron wrapper for
+  windows.cloud.microsoft, letting Linux users connect to Azure Virtual
+  Desktop and Windows 365 Cloud PCs without a native Windows client.
+
+  Each session opens in its own window with fullscreen support, there is
+  system tray integration, and both Wayland and X11 are supported.
+
+  This is not an official Microsoft product.
+license: MIT
+website: https://github.com/mariuszkopowski/windows-app-for-linux
+source-code: https://github.com/mariuszkopowski/windows-app-for-linux
+issues: https://github.com/mariuszkopowski/windows-app-for-linux/issues
+icon: snap/gui/windows-app-for-linux.png
+grade: stable
+confinement: strict
+platforms:
+  amd64:
+
+apps:
+  windows-app-for-linux:
+    # Chromium's setuid sandbox cannot work inside a strict snap; the snap
+    # confinement is the sandbox here, same as the previous electron-builder snap.
+    command: app/windows-app-for-linux --no-sandbox
+    extensions: [gnome]
+    plugs:
+      - network
+      - network-bind
+      - audio-playback
+      - audio-record
+      - camera
+      - opengl
+      - browser-support
+      - desktop-legacy
+      - home
+      - removable-media
+      - password-manager-service
+
+parts:
+  app:
+    plugin: nil
+    source: .
+    build-snaps:
+      - node/22/stable
+    build-packages:
+      - git
+    stage-packages:
+      - libnss3
+      - libnspr4
+      - libatk1.0-0t64
+      - libatk-bridge2.0-0t64
+      - libcups2t64
+      - libdrm2
+      - libgbm1
+      - libasound2t64
+      - libxss1
+      - libxtst6
+      - libnotify4
+      - libxkbcommon0
+      - libx11-xcb1
+      - libxcomposite1
+      - libxdamage1
+      - libxrandr2
+      - libxfixes3
+      - libxcb-dri3-0
+      - xdg-utils
+    override-pull: |
+      craftctl default
+      craftctl set version="$(sed -n 's/^  "version": "\(.*\)",$/\1/p' package.json | head -1)"
+    override-build: |
+      set -eu
+      npm ci
+      # Unpacked Electron app (no AppImage/flatpak/snap targets).
+      npx electron-builder --linux dir --publish never
+      mkdir -p "$CRAFT_PART_INSTALL/app"
+      cp -a dist/linux-unpacked/. "$CRAFT_PART_INSTALL/app/"
+      # The setuid helper cannot be used in a snap and trips snap review.
+      rm -f "$CRAFT_PART_INSTALL/app/chrome-sandbox"
