@@ -1,5 +1,6 @@
-// Runs in renderer context (contextIsolation: false) before page scripts
+// Runs in the isolated preload context (contextIsolation: true) before page scripts
 
+const { contextBridge } = require('electron');
 const { parseUaVersions } = require('../mainAppWindow/helpers');
 
 function skipFirstRunExperience() {
@@ -45,73 +46,72 @@ const BRANDS = [
   { brand: 'Not_A Brand', version: '99' },
 ];
 
-function spoofPlatform() {
-  try {
-    Object.defineProperty(Navigator.prototype, 'platform', {
-      get: () => 'Win32',
-      configurable: true,
-    });
-  } catch {
+// contextIsolation keeps this preload's JS context separate from the page's
+// main world, so patching Navigator.prototype here would be invisible to the
+// page — run the actual spoofing inside the main world via contextBridge.
+// (executeInMainWorld serializes `func`, so it can't close over outer vars —
+// everything it needs is passed through `args`.)
+contextBridge.executeInMainWorld({
+  args: [BRANDS, EDGE_VERSION, CHROME_VERSION],
+  func: (brands, edgeVersion, chromeVersion) => {
     try {
-      Object.defineProperty(navigator, 'platform', {
+      Object.defineProperty(Navigator.prototype, 'platform', {
         get: () => 'Win32',
         configurable: true,
       });
-    } catch { /* non-fatal */ }
-  }
-}
-
-function spoofUserAgentData() {
-  try {
-    const original = navigator.userAgentData;
-    if (!original) return;
-
-    // Build spoofed NavigatorUAData-compatible object
-    const spoofed = {
-      brands: BRANDS,
-      mobile: false,
-      platform: 'Windows',
-      getHighEntropyValues: async (hints) => {
-        let base = {};
-        try { base = await original.getHighEntropyValues(hints); } catch { /* ok */ }
-        return {
-          ...base,
-          ...(hints.includes('platform') && { platform: 'Windows' }),
-          ...(hints.includes('platformVersion') && { platformVersion: '15.0.0' }),
-          ...(hints.includes('architecture') && { architecture: 'x86' }),
-          ...(hints.includes('bitness') && { bitness: '64' }),
-          ...(hints.includes('wow64') && { wow64: false }),
-          ...(hints.includes('uaFullVersion') && { uaFullVersion: `${EDGE_VERSION}.0.0.0` }),
-          ...(hints.includes('fullVersionList') && {
-            fullVersionList: [
-              { brand: 'Microsoft Edge', version: `${EDGE_VERSION}.0.0.0` },
-              { brand: 'Chromium', version: `${CHROME_VERSION}.0.0.0` },
-              { brand: 'Not_A Brand', version: '99.0.0.0' },
-            ],
-          }),
-        };
-      },
-      toJSON: () => ({ brands: BRANDS, mobile: false, platform: 'Windows' }),
-    };
-
-    // Try instance first — takes priority over prototype without needing reconfigurability
-    const targets = [navigator, Navigator.prototype];
-    for (const target of targets) {
+    } catch {
       try {
-        Object.defineProperty(target, 'userAgentData', {
-          get: () => spoofed,
+        Object.defineProperty(navigator, 'platform', {
+          get: () => 'Win32',
           configurable: true,
-          enumerable: true,
         });
-        break;
-      } catch { /* try next */ }
+      } catch { /* non-fatal */ }
     }
-  } catch { /* non-fatal */ }
-}
 
-// ---------------------------------------------------------------------------
-// Must run after the declarations above — spoofUserAgentData() reads BRANDS.
+    try {
+      const original = navigator.userAgentData;
+      if (!original) return;
 
-spoofPlatform();
-spoofUserAgentData();
+      const spoofed = {
+        brands,
+        mobile: false,
+        platform: 'Windows',
+        getHighEntropyValues: async (hints) => {
+          let base = {};
+          try { base = await original.getHighEntropyValues(hints); } catch { /* ok */ }
+          return {
+            ...base,
+            ...(hints.includes('platform') && { platform: 'Windows' }),
+            ...(hints.includes('platformVersion') && { platformVersion: '15.0.0' }),
+            ...(hints.includes('architecture') && { architecture: 'x86' }),
+            ...(hints.includes('bitness') && { bitness: '64' }),
+            ...(hints.includes('wow64') && { wow64: false }),
+            ...(hints.includes('uaFullVersion') && { uaFullVersion: `${edgeVersion}.0.0.0` }),
+            ...(hints.includes('fullVersionList') && {
+              fullVersionList: [
+                { brand: 'Microsoft Edge', version: `${edgeVersion}.0.0.0` },
+                { brand: 'Chromium', version: `${chromeVersion}.0.0.0` },
+                { brand: 'Not_A Brand', version: '99.0.0.0' },
+              ],
+            }),
+          };
+        },
+        toJSON: () => ({ brands, mobile: false, platform: 'Windows' }),
+      };
+
+      const targets = [navigator, Navigator.prototype];
+      for (const target of targets) {
+        try {
+          Object.defineProperty(target, 'userAgentData', {
+            get: () => spoofed,
+            configurable: true,
+            enumerable: true,
+          });
+          break;
+        } catch { /* try next */ }
+      }
+    } catch { /* non-fatal */ }
+  },
+});
+
 skipFirstRunExperience();
