@@ -28,15 +28,15 @@
     <name>mariuszkopowski</name>
   </developer>
 
-  <url type="homepage">https://github.com/mariuszkopowski/windows-app-for-linux</url>
-  <url type="bugtracker">https://github.com/mariuszkopowski/windows-app-for-linux/issues</url>
+  <url type="homepage">https://github.com/mariuszkopowski/WindowsAppForLinux</url>
+  <url type="bugtracker">https://github.com/mariuszkopowski/WindowsAppForLinux/issues</url>
 
   <launchable type="desktop-id">io.github.mariuszkopowski.WindowsAppForLinux.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">
       <caption>Windows App portal showing available cloud PCs</caption>
-      <image>https://raw.githubusercontent.com/mariuszkopowski/windows-app-for-linux/main/docs/screenshot.jpg</image>
+      <image>https://raw.githubusercontent.com/mariuszkopowski/WindowsAppForLinux/main/docs/screenshot.jpg</image>
     </screenshot>
   </screenshots>
 

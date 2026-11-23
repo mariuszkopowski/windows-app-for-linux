@@ -4,7 +4,7 @@
 
 | Remote | URL | Role |
 |---|---|---|
-| `origin` | `https://github.com/mariuszkopowski/windows-app-for-linux.git` | Only remote and repo of record (Flathub/Snap publish from it); CI in `.github/workflows/build.yml` |
+| `origin` | `https://github.com/mariuszkopowski/WindowsAppForLinux.git` | Only remote and repo of record (Flathub/Snap publish from it); CI in `.github/workflows/build.yml` |
 
 - GitHub account: **mariuszkopowski** (App ID `io.github.mariuszkopowski.WindowsAppForLinux`).
 - The self-hosted OneDev mirror was deleted on 2026-11-23 (a bare mirror of its 61 commits is kept locally outside the repo). The old Gitea instance is gone too; there is no GitLab pipeline.

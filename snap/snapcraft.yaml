@@ -13,9 +13,9 @@ description: |
 
   This is not an official Microsoft product.
 license: MIT
-website: https://github.com/mariuszkopowski/windows-app-for-linux
-source-code: https://github.com/mariuszkopowski/windows-app-for-linux
-issues: https://github.com/mariuszkopowski/windows-app-for-linux/issues
+website: https://github.com/mariuszkopowski/WindowsAppForLinux
+source-code: https://github.com/mariuszkopowski/WindowsAppForLinux
+issues: https://github.com/mariuszkopowski/WindowsAppForLinux/issues
 icon: snap/gui/windows-app-for-linux.png
 grade: stable
 confinement: strict
