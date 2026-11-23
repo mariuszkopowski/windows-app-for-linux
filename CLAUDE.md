@@ -21,7 +21,7 @@ npm run build:snap
 npm run build        # all three targets
 ```
 
-Building the flatpak/snap targets locally requires `flatpak-builder`/`squashfs-tools` on the host — see `.github/workflows/build.yml` for the exact setup steps used in CI. Build/test also run on `.onedev-buildspec.yml` (OneDev, `git.koprowski.cc`) — keep changes to build/test steps in sync across both. GitHub is kept as the public repo of record because Flathub and the Snap Store publish from it.
+Building the flatpak/snap targets locally requires `flatpak-builder`/`squashfs-tools` on the host — see `.github/workflows/build.yml` for the exact setup steps used in CI. CI is GitHub Actions only (`.github/workflows/build.yml`); GitHub is the repo of record and Flathub and the Snap Store publish from it. There is no OneDev, Gitea or GitLab pipeline.
 
 Both pipelines share the same shape: `pre-build-test` (Jest, every push) → `build-packages` (AppImage/Flatpak/Snap, gated to `main` + tags `v*`) → `verify` (three jobs in parallel, one per format, each installs/extracts its package and runs it headless with `--smoke-test` to confirm it actually boots post-install). See `docs/DEVELOPMENT.md` → CI for the full breakdown, including why `--smoke-test` needed a packaged-vs-dev `process.argv` fix in `config/index.js` (`hideBin()` assumes the dev-mode two-entry argv shape and silently eats the first real flag otherwise) and why Snap verification unpacks+runs the binary directly instead of going through snapd.
 

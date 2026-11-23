@@ -131,7 +131,7 @@ Working Electron app loading Windows App, with UA spoof and auth support.
 
 **Remaining:**
 - Window state persistence (size/position) — done
-- Full CI (GitHub Actions + OneDev) — done
+- Full CI (GitHub Actions) — done; the OneDev mirror was dropped on 2026-11-23
 
 ### Phase 2 — Tab Manager
 

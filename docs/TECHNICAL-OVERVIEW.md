@@ -50,7 +50,7 @@ The application has full unit tests in Jest (80/80 tests green), verifying the c
 
 ### 2. Obsidian Vault — Internal documentation
 Unpublished notes and the history of agent interactions live solely locally:
-- [project-state](PROJECT-STATE.md) — infrastructure details (the GitHub `origin` and OneDev `onedev` remotes), branch-history discrepancies (PR #8), and specific limitations (e.g., the non-working webcam issue, which stems from a lack of redirection support in Microsoft's web client, not an application bug).
+- [project-state](PROJECT-STATE.md) — infrastructure details (the GitHub `origin` remote), branch-history discrepancies (PR #8), and specific limitations (e.g., the non-working webcam issue, which stems from a lack of redirection support in Microsoft's web client, not an application bug).
 
 ### 3. Development direction (Phase 2)
 The next key milestone is implementing a tab manager (**Tab Manager**). Instead of opening each AVD session in a new system window (as is currently the case), the application will move to a multi-tab model based on `WebContentsView` embedded in a single main window with a custom tab bar written in HTML/CSS.
