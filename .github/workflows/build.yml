@@ -69,8 +69,99 @@ jobs:
             dist/*.snap
           if-no-files-found: error
 
+  # Post-install smoke tests: install/extract each package and boot it headless
+  # with --smoke-test (window, session, preload, tray/menu/i18n initialise, then
+  # exit 0), so a package that builds but does not start fails CI.
+  verify-appimage:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+
+      - name: Install runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+
+      # No FUSE on the runner, so --appimage-extract-and-run self-extracts.
+      # Don't invoke AppRun by hand: its APPDIR auto-detection breaks on CLI
+      # flags that aren't real filenames. --no-sandbox because Ubuntu 24.04
+      # runners restrict unprivileged user namespaces for the Chromium sandbox.
+      - name: Smoke test AppImage
+        run: |
+          chmod +x dist/*.AppImage
+          timeout 180 xvfb-run -a dist/*.AppImage --appimage-extract-and-run --smoke-test --no-sandbox
+
+  verify-flatpak:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+
+      - name: Install flatpak and xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak xvfb dbus-x11
+
+      # A local .flatpak install needs a live D-Bus session; the runtimes
+      # (25.08) are pulled from Flathub on install.
+      - name: Install and smoke test Flatpak
+        run: |
+          dbus-run-session -- bash -c '
+            set -e
+            flatpak remote-add --if-not-exists --user flathub https://flathub.org/repo/flathub.flatpakrepo
+            flatpak install -y --user dist/*.flatpak
+            timeout 180 xvfb-run -a flatpak run io.github.mariuszkopowski.WindowsAppForLinux -- --smoke-test
+          '
+
+  verify-snap:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+
+      - name: Install runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xdg-utils libatspi2.0-0 libdrm2 libgbm1 libcups2 squashfs-tools
+          sudo apt-get install -y libasound2t64 || sudo apt-get install -y libasound2
+
+      # Confined snap install needs snapd/systemd, so unpack the squashfs
+      # payload and run the bundled binary directly.
+      - name: Smoke test Snap
+        run: |
+          unsquashfs -d snap-root dist/*.snap
+          cmd=$(awk '/^apps:/{f=1} f && /command:/{print $2; exit}' snap-root/meta/snap.yaml)
+          timeout 180 xvfb-run -a "snap-root/$cmd" --smoke-test --no-sandbox
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [verify-appimage, verify-flatpak, verify-snap]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist
+
       - name: Publish GitHub release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: |
