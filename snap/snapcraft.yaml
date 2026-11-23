@@ -28,7 +28,6 @@ apps:
     # confinement is the sandbox here, same as the previous electron-builder snap.
     command: app/windows-app-for-linux --no-sandbox
     extensions: [gnome]
-    desktop: meta/gui/windows-app-for-linux.desktop
     plugs:
       - network
       - network-bind
