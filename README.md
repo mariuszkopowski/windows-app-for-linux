@@ -17,7 +17,7 @@ This is not affiliated with or endorsed by Microsoft.
 
 ## Installation
 
-Prebuilt packages are attached to [GitHub Releases](https://github.com/mariuszkopowski/windows-app-for-linux/releases).
+Prebuilt packages are attached to [GitHub Releases](https://github.com/mariuszkopowski/WindowsAppForLinux/releases).
 
 ### AppImage
 
