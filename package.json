@@ -22,12 +22,9 @@
   "author": "mariuszkopowski",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^43.8.12",
+    "electron": "^45.4.1",
     "electron-builder": "^26.18.0",
     "jest": "^30.5.2"
-  },
-  "dependencies": {
-    "yargs": "^17.7.2"
   },
   "build": {
     "appId": "io.github.mariuszkopowski.WindowsAppForLinux",
@@ -91,6 +88,6 @@
     }
   },
   "allowScripts": {
-    "electron@43.8.12": true
+    "electron@45.4.1": true
   }
 }

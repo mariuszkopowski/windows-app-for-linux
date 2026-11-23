@@ -96,6 +96,23 @@ describe('loadConfig', () => {
     expect(cfg.smokeTest).toBe(false);
   });
 
+  it('ignores unknown (e.g. Chromium) flags and still parses known ones', () => {
+    const cfg = loadConfig({
+      configPath: '/nonexistent.json',
+      argv: ['node', 'app', '--ozone-platform=x11', '--disable-gpu', '--url', 'https://cli.example.com', '--smoke-test'],
+    });
+    expect(cfg.url).toBe('https://cli.example.com');
+    expect(cfg.smokeTest).toBe(true);
+  });
+
+  it('ignores an unknown --cloud-environment preset instead of aborting', () => {
+    const cfg = loadConfig({
+      configPath: '/nonexistent.json',
+      argv: ['node', 'app', '--cloud-environment', 'nope'],
+    });
+    expect(cfg.url).toBe(require('../../app/config/options').url);
+  });
+
   it('CLI --smoke-test sets smokeTest to true', () => {
     const cfg = loadConfig({
       configPath: '/nonexistent.json',
