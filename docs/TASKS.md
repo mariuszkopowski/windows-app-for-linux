@@ -1,5 +1,8 @@
 # Task register — windows-app-for-linux
 
+## Overview
+Task register for windows-app-for-linux: every task carries a status, target files, acceptance criteria, unit tests (where applicable) and manual tests. Mirrors the phase breakdown in `[PLAN](PLAN.md)`.
+
 ## Status legend
 
 | Symbol | Meaning |

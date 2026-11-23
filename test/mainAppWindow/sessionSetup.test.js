@@ -1,8 +1,8 @@
 const { permissionAllowed, stripCspReportOnly, clearAvdSessionState, parseUaVersions } = require('../../app/mainAppWindow/helpers');
 
 describe('permissionAllowed', () => {
-  const granted = ['camera', 'microphone', 'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write'];
-  const denied = ['geolocation', 'fullscreen', 'pointerLock', 'unknown-permission'];
+  const granted = ['camera', 'microphone', 'notifications', 'media', 'display-capture', 'clipboard-read', 'clipboard-sanitized-write', 'fullscreen', 'keyboardLock', 'pointerLock'];
+  const denied = ['geolocation', 'midi', 'unknown-permission'];
 
   granted.forEach(perm => {
     it(`grants ${perm}`, () => {

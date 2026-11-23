@@ -1,5 +1,5 @@
 const { app } = require('electron');
-const { buildFeatureFlags } = require('./chromiumFlags');
+const { buildFeatureFlags, buildGpuSwitches } = require('./chromiumFlags');
 
 const isWayland = !!process.env.WAYLAND_DISPLAY;
 const isFlatpak = !!process.env.FLATPAK_ID;
@@ -25,10 +25,19 @@ if (isFlatpak) {
   app.commandLine.appendSwitch('enable-features', features);
   app.commandLine.appendSwitch('enable-blink-features', 'SharedArrayBuffer');
   app.commandLine.appendSwitch('disable-dev-shm-usage');
+  buildGpuSwitches(isNvidia).forEach(sw => app.commandLine.appendSwitch(sw));
 
   if (isWayland) {
     // NVIDIA proprietary + native Wayland = EGL_BAD_MATCH GPU crashes — use XWayland
     if (isNvidia) {
+      // appendSwitch is too late for the ozone platform (Chromium picks it
+      // before main runs, so the GPU process ends up on X11 while the browser
+      // stays on Wayland and no window is created). Re-exec once with the
+      // flag on the real command line.
+      if (!process.argv.some(a => a.startsWith('--ozone-platform'))) {
+        app.relaunch({ args: [...process.argv.slice(1), '--ozone-platform=x11'] });
+        app.exit(0);
+      }
       app.commandLine.appendSwitch('ozone-platform', 'x11');
     } else {
       app.commandLine.appendSwitch('ozone-platform', 'wayland');
@@ -43,12 +52,24 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 app.whenReady().then(async () => {
+  const config = require('./config');
   const { load } = require('./i18n');
   const { applyMenu } = require('./menus/appMenu');
   const { createMainWindow } = require('./mainAppWindow');
   load();
   applyMenu();
   await createMainWindow();
+
+  // Packaging smoke test (`--smoke-test`, used in CI after install): proves
+  // the package installs and Electron boots — window, session, preload,
+  // tray/menu/i18n all initialize without crashing — without depending on
+  // network access or reaching the real windows.cloud.microsoft portal.
+  if (config.smokeTest) {
+    app.exit(0);
+  }
+}).catch(err => {
+  console.error('Startup failed:', err);
+  app.exit(1);
 });
 
 app.on('second-instance', () => {

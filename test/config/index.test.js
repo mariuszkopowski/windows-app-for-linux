@@ -90,6 +90,25 @@ describe('loadConfig', () => {
     });
     expect(cfg.url).toBe('https://cli.example.com');
   });
+
+  it('smokeTest defaults to false', () => {
+    const cfg = loadConfig({ configPath: '/nonexistent.json' });
+    expect(cfg.smokeTest).toBe(false);
+  });
+
+  it('CLI --smoke-test sets smokeTest to true', () => {
+    const cfg = loadConfig({
+      configPath: '/nonexistent.json',
+      argv: ['node', 'app', '--smoke-test'],
+    });
+    expect(cfg.smokeTest).toBe(true);
+  });
+
+  it('smokeTest is never read from the config file (CLI-only)', () => {
+    const file = writeTmpConfig({ smokeTest: true });
+    const cfg = loadConfig({ configPath: file });
+    expect(cfg.smokeTest).toBe(false);
+  });
 });
 
 describe('saveConfig', () => {

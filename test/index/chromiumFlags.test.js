@@ -33,3 +33,13 @@ describe('buildFeatureFlags', () => {
     expect(flags.split(',').length).toBeGreaterThan(1);
   });
 });
+
+describe('buildGpuSwitches', () => {
+  const { buildGpuSwitches } = require('../../app/chromiumFlags');
+  it('disables GPU compositing on NVIDIA', () => {
+    expect(buildGpuSwitches(true)).toEqual(['disable-gpu-compositing']);
+  });
+  it('adds nothing on non-NVIDIA', () => {
+    expect(buildGpuSwitches(false)).toEqual([]);
+  });
+});

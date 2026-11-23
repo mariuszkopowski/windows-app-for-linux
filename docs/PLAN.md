@@ -1,5 +1,8 @@
 # Implementation plan — windows-app-for-linux
 
+## Overview
+Phased implementation plan for windows-app-for-linux: technology decisions, architecture (multi-tab `WebContentsView` model, fullscreen-per-tab), the critical UA-spoof and Chromium-flag requirements, and the five implementation phases (Foundation done; Tab Manager / Fullscreen / System / Packaging remaining).
+
 ## Project goal
 
 A native Linux application wrapping `https://windows.cloud.microsoft` (Windows App / Azure Virtual Desktop). Lets you work with the Windows cloud like a local app: multi-tab interface, keyboard handling in fullscreen, system integration.
@@ -128,7 +131,7 @@ Working Electron app loading Windows App, with UA spoof and auth support.
 
 **Remaining:**
 - Window state persistence (size/position) — done
-- Full CI (GitHub Actions + Gitea Actions) — done
+- Full CI (GitHub Actions + OneDev) — done
 
 ### Phase 2 — Tab Manager
 

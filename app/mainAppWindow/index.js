@@ -7,11 +7,7 @@ const windowState = require('./windowState');
 // KDE needs a nativeImage (not a path) to show the icon in the taskbar/window list.
 const windowIcon = () => nativeImage.createFromPath(path.join(__dirname, '../../assets/icons/512x512.png'));
 const {
-  isAuthUrl,
-  isAvdUrl,
-  isSafeExternalUrl,
-  isLikelyAuthPopup,
-  isBlankAuthPopup,
+  classifyWindowOpen,
   parseUaVersions,
   clearAvdSessionState,
   permissionAllowed,
@@ -25,21 +21,18 @@ const avdWindows = new Set();
 // navigation must not be intercepted (see createAboutBlankInterceptor).
 const authPopupIds = new Set();
 
-function authPopupResult(parent) {
+function authPopupOptions(parentWin) {
   return {
-    action: 'allow',
-    overrideBrowserWindowOptions: {
-      modal: true,
-      autoHideMenuBar: true,
-      parent,
-      width: 520,
-      height: 700,
-      webPreferences: {
-        partition: config.sessionPartition,
-        contextIsolation: false,
-        sandbox: false,
-        nodeIntegration: false,
-      },
+    modal: true,
+    autoHideMenuBar: true,
+    parent: parentWin,
+    width: 520,
+    height: 700,
+    webPreferences: {
+      partition: config.sessionPartition,
+      contextIsolation: false,
+      sandbox: false,
+      nodeIntegration: false,
     },
   };
 }
@@ -50,6 +43,23 @@ function trackAuthPopup(wc) {
     authPopupIds.add(id);
     child.on('closed', () => authPopupIds.delete(id));
   });
+}
+
+// Shared by the main window and every AVD session window — see
+// classifyWindowOpen() in helpers.js for why this isn't inlined per-window.
+function handleWindowOpen(parentWin, { url, features, disposition }) {
+  switch (classifyWindowOpen(url, features, disposition)) {
+    case 'avd':
+      createAvdWindow(url);
+      return { action: 'deny' };
+    case 'authPopup':
+      return { action: 'allow', overrideBrowserWindowOptions: authPopupOptions(parentWin) };
+    case 'external':
+      shell.openExternal(url);
+      return { action: 'deny' };
+    default:
+      return { action: 'deny' };
+  }
 }
 
 const AUTH_CLEAR_ORIGINS = [
@@ -95,29 +105,16 @@ function createAvdWindow(url) {
     },
   });
 
-  win.webContents.setWindowOpenHandler(({ url: newUrl, features, disposition }) => {
-    if (isBlankAuthPopup(newUrl, features, disposition)) return authPopupResult(win);
-    if (!newUrl || newUrl === 'about:blank') return { action: 'deny' };
-    if (isAvdUrl(newUrl)) {
-      createAvdWindow(newUrl);
-      return { action: 'deny' };
-    }
-    if (isSafeExternalUrl(newUrl) && isLikelyAuthPopup(features, disposition)) {
-      return authPopupResult(win);
-    }
-    if (isSafeExternalUrl(newUrl)) shell.openExternal(newUrl);
-    return { action: 'deny' };
-  });
+  win.webContents.setWindowOpenHandler(params => handleWindowOpen(win, params));
 
   trackAuthPopup(win.webContents);
   win.webContents.on('will-prevent-unload', (event) => event.preventDefault());
   win.webContents.on('enter-html-full-screen', () => {
     if (!win.isFullScreen()) win.setFullScreen(true);
   });
-
-    win.webContents.on('leave-html-full-screen', () => {
-      if (win.isFullScreen()) win.setFullScreen(false);
-    });
+  win.webContents.on('leave-html-full-screen', () => {
+    if (win.isFullScreen()) win.setFullScreen(false);
+  });
 
   avdWindows.add(win);
   rebuildMenu();
@@ -201,22 +198,7 @@ async function createMainWindow() {
     },
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url, features, disposition }) => {
-    if (isBlankAuthPopup(url, features, disposition)) return authPopupResult(mainWindow);
-    if (!url || url === 'about:blank' || url === 'about:blank#blocked') {
-      return { action: 'deny' };
-    }
-    if (isAvdUrl(url)) {
-      createAvdWindow(url);
-      return { action: 'deny' };
-    }
-    if (isAuthUrl(url) || (isSafeExternalUrl(url) && isLikelyAuthPopup(features, disposition))) {
-      return authPopupResult(mainWindow);
-    }
-    if (isSafeExternalUrl(url)) shell.openExternal(url);
-    return { action: 'deny' };
-  });
-
+  mainWindow.webContents.setWindowOpenHandler(params => handleWindowOpen(mainWindow, params));
   trackAuthPopup(mainWindow.webContents);
 
   createTray(() => mainWindow, () => [...avdWindows]);
