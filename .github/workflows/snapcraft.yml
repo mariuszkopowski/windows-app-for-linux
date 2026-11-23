@@ -1,0 +1,41 @@
+name: snapcraft
+
+# Validates snap/snapcraft.yaml, the file snapcraft.io's GitHub integration
+# (Launchpad) builds for the Snap Store, by building it with snapcraft and
+# booting the installed snap headless. Not part of the release pipeline.
+on:
+  pull_request:
+    branches: [main]
+    paths: ['snap/**', '.github/workflows/snapcraft.yml', 'package.json', 'package-lock.json', 'app/**']
+  workflow_dispatch: {}
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build snap with snapcraft
+        id: build
+        uses: snapcore/action-build@v1
+
+      - name: Upload snap
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapcraft-snap
+          path: ${{ steps.build.outputs.snap }}
+
+      - name: Install xvfb
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+
+      # A real (dangerous = unsigned) install, so the gnome extension, content
+      # snap and confinement are exercised, unlike unpacking the squashfs.
+      - name: Install and smoke test the snap
+        run: |
+          sudo snap install --dangerous "${{ steps.build.outputs.snap }}"
+          snap list windows-app-for-linux
+          timeout 180 xvfb-run -a snap run windows-app-for-linux --smoke-test
