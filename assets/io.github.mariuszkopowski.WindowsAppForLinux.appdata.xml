@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
   <id>io.github.mariuszkopowski.WindowsAppForLinux</id>
-  <name>Windows App</name>
-  <summary>Windows App (cloud.microsoft) client for Linux</summary>
+  <name>Windows App for Linux</name>
+  <summary>Unofficial client for Windows App (Azure Virtual Desktop, Windows 365)</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
@@ -41,6 +41,11 @@
   </screenshots>
 
   <releases>
+    <release version="0.1.8" date="2026-11-23">
+      <description>
+        <p>Packaging release: Flathub-ready metadata, a core24 Snap Store build and a screenshot.</p>
+      </description>
+    </release>
     <release version="0.1.7" date="2026-11-23">
       <description>
         <ul>
